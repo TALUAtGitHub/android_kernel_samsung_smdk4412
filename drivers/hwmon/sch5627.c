@@ -245,12 +245,6 @@ static int sch5627_read_virtual_reg(struct sch5627_data *data, u16 reg)
 	return sch5627_send_cmd(data, SCH5627_CMD_READ, reg, 0);
 }
 
-static int sch5627_write_virtual_reg(struct sch5627_data *data,
-				     u16 reg, u8 val)
-{
-	return sch5627_send_cmd(data, SCH5627_CMD_WRITE, reg, val);
-}
-
 static int sch5627_read_virtual_reg16(struct sch5627_data *data, u16 reg)
 {
 	int lsb, msb;
