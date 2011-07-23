@@ -2621,10 +2621,6 @@ static const struct inode_operations shmem_inode_operations = {
 	.listxattr	= shmem_listxattr,
 	.removexattr	= shmem_removexattr,
 #endif
-#ifdef CONFIG_TMPFS_POSIX_ACL
-	.check_acl	= generic_check_acl,
-#endif
-
 };
 
 static const struct inode_operations shmem_dir_inode_operations = {
@@ -2647,7 +2643,6 @@ static const struct inode_operations shmem_dir_inode_operations = {
 #endif
 #ifdef CONFIG_TMPFS_POSIX_ACL
 	.setattr	= shmem_setattr,
-	.check_acl	= generic_check_acl,
 #endif
 };
 
@@ -2660,7 +2655,6 @@ static const struct inode_operations shmem_special_inode_operations = {
 #endif
 #ifdef CONFIG_TMPFS_POSIX_ACL
 	.setattr	= shmem_setattr,
-	.check_acl	= generic_check_acl,
 #endif
 };
 
