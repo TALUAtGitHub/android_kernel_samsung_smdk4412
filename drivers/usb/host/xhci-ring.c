@@ -3044,7 +3044,7 @@ static u32 xhci_v1_0_td_remainder(int running_total, int trb_buff_len,
 	 * running_total.
 	 */
 	packets_transferred = (running_total + trb_buff_len) /
-		le16_to_cpu(urb->ep->desc.wMaxPacketSize);
+		usb_endpoint_maxp(&urb->ep->desc);
 
 	if ((total_packet_count - packets_transferred) > 31)
 		return 31 << 17;
@@ -3074,7 +3074,7 @@ static int queue_bulk_sg_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
 		return -EINVAL;
 
 	num_trbs = count_sg_trbs_needed(xhci, urb);
-	num_sgs = urb->num_mapped_sgs;
+	num_sgs = urb->num_sgs;
 	total_packet_count = DIV_ROUND_UP(urb->transfer_buffer_length,
 			usb_endpoint_maxp(&urb->ep->desc));
 
