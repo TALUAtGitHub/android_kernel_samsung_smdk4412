@@ -752,7 +752,76 @@ static irqreturn_t ep93xx_spi_interrupt(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static int __init ep93xx_spi_probe(struct platform_device *pdev)
+static bool ep93xx_spi_dma_filter(struct dma_chan *chan, void *filter_param)
+{
+	if (ep93xx_dma_chan_is_m2p(chan))
+		return false;
+
+	chan->private = filter_param;
+	return true;
+}
+
+static int ep93xx_spi_setup_dma(struct ep93xx_spi *espi)
+{
+	dma_cap_mask_t mask;
+	int ret;
+
+	espi->zeropage = (void *)get_zeroed_page(GFP_KERNEL);
+	if (!espi->zeropage)
+		return -ENOMEM;
+
+	dma_cap_zero(mask);
+	dma_cap_set(DMA_SLAVE, mask);
+
+	espi->dma_rx_data.port = EP93XX_DMA_SSP;
+	espi->dma_rx_data.direction = DMA_FROM_DEVICE;
+	espi->dma_rx_data.name = "ep93xx-spi-rx";
+
+	espi->dma_rx = dma_request_channel(mask, ep93xx_spi_dma_filter,
+					   &espi->dma_rx_data);
+	if (!espi->dma_rx) {
+		ret = -ENODEV;
+		goto fail_free_page;
+	}
+
+	espi->dma_tx_data.port = EP93XX_DMA_SSP;
+	espi->dma_tx_data.direction = DMA_TO_DEVICE;
+	espi->dma_tx_data.name = "ep93xx-spi-tx";
+
+	espi->dma_tx = dma_request_channel(mask, ep93xx_spi_dma_filter,
+					   &espi->dma_tx_data);
+	if (!espi->dma_tx) {
+		ret = -ENODEV;
+		goto fail_release_rx;
+	}
+
+	return 0;
+
+fail_release_rx:
+	dma_release_channel(espi->dma_rx);
+	espi->dma_rx = NULL;
+fail_free_page:
+	free_page((unsigned long)espi->zeropage);
+
+	return ret;
+}
+
+static void ep93xx_spi_release_dma(struct ep93xx_spi *espi)
+{
+	if (espi->dma_rx) {
+		dma_release_channel(espi->dma_rx);
+		sg_free_table(&espi->rx_sgt);
+	}
+	if (espi->dma_tx) {
+		dma_release_channel(espi->dma_tx);
+		sg_free_table(&espi->tx_sgt);
+	}
+
+	if (espi->zeropage)
+		free_page((unsigned long)espi->zeropage);
+}
+
+static int __devinit ep93xx_spi_probe(struct platform_device *pdev)
 {
 	struct spi_master *master;
 	struct ep93xx_spi_info *info;
@@ -872,7 +941,7 @@ fail_release_master:
 	return error;
 }
 
-static int __exit ep93xx_spi_remove(struct platform_device *pdev)
+static int __devexit ep93xx_spi_remove(struct platform_device *pdev)
 {
 	struct spi_master *master = platform_get_drvdata(pdev);
 	struct ep93xx_spi *espi = spi_master_get_devdata(master);
@@ -917,20 +986,10 @@ static struct platform_driver ep93xx_spi_driver = {
 		.name	= "ep93xx-spi",
 		.owner	= THIS_MODULE,
 	},
-	.remove		= __exit_p(ep93xx_spi_remove),
+	.probe		= ep93xx_spi_probe,
+	.remove		= __devexit_p(ep93xx_spi_remove),
 };
-
-static int __init ep93xx_spi_init(void)
-{
-	return platform_driver_probe(&ep93xx_spi_driver, ep93xx_spi_probe);
-}
-module_init(ep93xx_spi_init);
-
-static void __exit ep93xx_spi_exit(void)
-{
-	platform_driver_unregister(&ep93xx_spi_driver);
-}
-module_exit(ep93xx_spi_exit);
+module_platform_driver(ep93xx_spi_driver);
 
 MODULE_DESCRIPTION("EP93xx SPI Controller driver");
 MODULE_AUTHOR("Mika Westerberg <mika.westerberg@iki.fi>");
