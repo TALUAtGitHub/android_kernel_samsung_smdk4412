@@ -11,9 +11,9 @@
 
 struct user_namespace {
 	struct kref		kref;
-	struct hlist_head	uidhash_table[UIDHASH_SZ];
-	struct user_struct	*creator;
-	struct work_struct	destroyer;
+	struct user_namespace	*parent;
+	kuid_t			owner;
+	kgid_t			group;
 
 	/* Register of per-UID persistent keyrings for this namespace */
 #ifdef CONFIG_PERSISTENT_KEYRINGS

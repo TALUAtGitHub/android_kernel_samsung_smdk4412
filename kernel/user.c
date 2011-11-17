@@ -25,7 +25,8 @@ struct user_namespace init_user_ns = {
 	.kref = {
 		.refcount	= ATOMIC_INIT(3),
 	},
-	.creator = &root_user,
+	.owner = GLOBAL_ROOT_UID,
+	.group = GLOBAL_ROOT_GID,
 #ifdef CONFIG_KEYS_KERBEROS_CACHE
 	.krb_cache_register_sem =
 	__RWSEM_INITIALIZER(init_user_ns.krb_cache_register_sem),
@@ -55,9 +56,9 @@ static struct kmem_cache *uid_cachep;
  */
 static DEFINE_SPINLOCK(uidhash_lock);
 
-/* root_user.__count is 2, 1 for init task cred, 1 for init_user_ns->user_ns */
+/* root_user.__count is 1, for init task cred */
 struct user_struct root_user = {
-	.__count	= ATOMIC_INIT(2),
+	.__count	= ATOMIC_INIT(1),
 	.processes	= ATOMIC_INIT(1),
 	.files		= ATOMIC_INIT(0),
 	.sigpending	= ATOMIC_INIT(0),
