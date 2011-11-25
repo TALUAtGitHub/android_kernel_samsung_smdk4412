@@ -889,6 +889,3 @@ static void __exit sch5627_exit(void)
 MODULE_DESCRIPTION("SMSC SCH5627 Hardware Monitoring Driver");
 MODULE_AUTHOR("Hans de Goede <hdegoede@redhat.com>");
 MODULE_LICENSE("GPL");
-
-module_init(sch5627_init);
-module_exit(sch5627_exit);
