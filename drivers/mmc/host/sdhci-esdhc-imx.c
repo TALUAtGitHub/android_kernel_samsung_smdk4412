@@ -329,3 +329,9 @@ struct sdhci_pltfm_data sdhci_esdhc_imx_pdata = {
 	.init = esdhc_pltfm_init,
 	.exit = esdhc_pltfm_exit,
 };
+
+module_platform_driver(sdhci_esdhc_imx_driver);
+
+MODULE_DESCRIPTION("SDHCI driver for Freescale i.MX eSDHC");
+MODULE_AUTHOR("Wolfram Sang <w.sang@pengutronix.de>");
+MODULE_LICENSE("GPL v2");

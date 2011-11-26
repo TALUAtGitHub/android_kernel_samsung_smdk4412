@@ -68,3 +68,30 @@ struct sdhci_pltfm_data sdhci_dove_pdata = {
 		  SDHCI_QUIRK_BROKEN_TIMEOUT_VAL |
 		  SDHCI_QUIRK_FORCE_DMA,
 };
+
+static int __devinit sdhci_dove_probe(struct platform_device *pdev)
+{
+	return sdhci_pltfm_register(pdev, &sdhci_dove_pdata);
+}
+
+static int __devexit sdhci_dove_remove(struct platform_device *pdev)
+{
+	return sdhci_pltfm_unregister(pdev);
+}
+
+static struct platform_driver sdhci_dove_driver = {
+	.driver		= {
+		.name	= "sdhci-dove",
+		.owner	= THIS_MODULE,
+		.pm	= SDHCI_PLTFM_PMOPS,
+	},
+	.probe		= sdhci_dove_probe,
+	.remove		= __devexit_p(sdhci_dove_remove),
+};
+
+module_platform_driver(sdhci_dove_driver);
+
+MODULE_DESCRIPTION("SDHCI driver for Dove");
+MODULE_AUTHOR("Saeed Bishara <saeed@marvell.com>, "
+	      "Mike Rapoport <mike@compulab.co.il>");
+MODULE_LICENSE("GPL v2");

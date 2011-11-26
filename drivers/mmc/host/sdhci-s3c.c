@@ -843,22 +843,7 @@ static struct platform_driver sdhci_s3c_driver = {
 	},
 };
 
-static int __init sdhci_s3c_init(void)
-{
-	return platform_driver_register(&sdhci_s3c_driver);
-}
-
-static void __exit sdhci_s3c_exit(void)
-{
-	platform_driver_unregister(&sdhci_s3c_driver);
-}
-
-#ifdef CONFIG_FAST_RESUME
-beforeresume_initcall(sdhci_s3c_init);
-#else
-module_init(sdhci_s3c_init);
-#endif
-module_exit(sdhci_s3c_exit);
+module_platform_driver(sdhci_s3c_driver);
 
 MODULE_DESCRIPTION("Samsung SDHCI (HSMMC) glue");
 MODULE_AUTHOR("Ben Dooks, <ben@simtec.co.uk>");

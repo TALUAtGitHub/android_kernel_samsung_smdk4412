@@ -63,3 +63,9 @@ struct sdhci_of_data sdhci_hlwd = {
 		.write_b = sdhci_hlwd_writeb,
 	},
 };
+
+module_platform_driver(sdhci_hlwd_driver);
+
+MODULE_DESCRIPTION("Nintendo Wii SDHCI OF driver");
+MODULE_AUTHOR("The GameCube Linux Team, Albert Herranz");
+MODULE_LICENSE("GPL v2");
