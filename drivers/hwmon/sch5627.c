@@ -599,15 +599,7 @@ static struct platform_driver sch5627_driver = {
 	.remove		= sch5627_remove,
 };
 
-static int __init sch5627_init(void)
-{
-	return platform_driver_register(&sch5627_driver);
-}
-
-static void __exit sch5627_exit(void)
-{
-	platform_driver_unregister(&sch5627_driver);
-}
+module_platform_driver(sch5627_driver);
 
 MODULE_DESCRIPTION("SMSC SCH5627 Hardware Monitoring Driver");
 MODULE_AUTHOR("Hans de Goede <hdegoede@redhat.com>");
