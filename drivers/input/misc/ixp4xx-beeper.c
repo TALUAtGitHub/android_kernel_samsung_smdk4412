@@ -168,5 +168,5 @@ static struct platform_driver ixp4xx_spkr_platform_driver = {
 	.remove		= __devexit_p(ixp4xx_spkr_remove),
 	.shutdown	= ixp4xx_spkr_shutdown,
 };
-
 module_platform_driver(ixp4xx_spkr_platform_driver);
+

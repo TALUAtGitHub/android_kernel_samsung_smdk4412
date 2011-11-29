@@ -125,7 +125,6 @@ static struct platform_driver pcap_keys_device_driver = {
 		.owner	= THIS_MODULE,
 	}
 };
-
 module_platform_driver(pcap_keys_device_driver);
 
 MODULE_DESCRIPTION("Motorola PCAP2 input events driver");

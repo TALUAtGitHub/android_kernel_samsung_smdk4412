@@ -163,6 +163,4 @@ static struct platform_driver cobalt_buttons_driver = {
 		.owner	= THIS_MODULE,
 	},
 };
-
 module_platform_driver(cobalt_buttons_driver);
-

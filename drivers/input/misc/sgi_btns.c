@@ -164,6 +164,6 @@ static struct platform_driver sgi_buttons_driver = {
 		.owner	= THIS_MODULE,
 	},
 };
-
 module_platform_driver(sgi_buttons_driver);
+
 MODULE_LICENSE("GPL");

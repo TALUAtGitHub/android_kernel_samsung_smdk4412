@@ -141,6 +141,5 @@ static struct platform_driver pcspkr_platform_driver = {
 	.remove		= __devexit_p(pcspkr_remove),
 	.shutdown	= pcspkr_shutdown,
 };
-
-
 module_platform_driver(pcspkr_platform_driver);
+

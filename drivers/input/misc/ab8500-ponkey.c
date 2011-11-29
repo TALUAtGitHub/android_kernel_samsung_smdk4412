@@ -139,7 +139,6 @@ static struct platform_driver ab8500_ponkey_driver = {
 	.probe		= ab8500_ponkey_probe,
 	.remove		= __devexit_p(ab8500_ponkey_remove),
 };
-
 module_platform_driver(ab8500_ponkey_driver);
 
 MODULE_LICENSE("GPL v2");

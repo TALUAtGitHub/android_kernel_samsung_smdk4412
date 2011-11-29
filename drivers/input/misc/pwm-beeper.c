@@ -180,7 +180,6 @@ static struct platform_driver pwm_beeper_driver = {
 		.pm	= PWM_BEEPER_PM_OPS,
 	},
 };
-
 module_platform_driver(pwm_beeper_driver);
 
 MODULE_AUTHOR("Lars-Peter Clausen <lars@metafoo.de>");

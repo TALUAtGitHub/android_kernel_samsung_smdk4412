@@ -113,7 +113,6 @@ static struct platform_driver pcf50633_input_driver = {
 	.probe = pcf50633_input_probe,
 	.remove = __devexit_p(pcf50633_input_remove),
 };
-
 module_platform_driver(pcf50633_input_driver);
 
 MODULE_AUTHOR("Balaji Rao <balajirrao@openmoko.org>");

@@ -166,7 +166,6 @@ static struct platform_driver max8925_onkey_driver = {
 	.probe		= max8925_onkey_probe,
 	.remove		= __devexit_p(max8925_onkey_remove),
 };
-
 module_platform_driver(max8925_onkey_driver);
 
 MODULE_DESCRIPTION("Maxim MAX8925 ONKEY driver");

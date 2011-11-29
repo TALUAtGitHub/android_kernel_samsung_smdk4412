@@ -145,7 +145,6 @@ static struct platform_driver wm831x_on_driver = {
 		.owner	= THIS_MODULE,
 	},
 };
-
 module_platform_driver(wm831x_on_driver);
 
 MODULE_ALIAS("platform:wm831x-on");

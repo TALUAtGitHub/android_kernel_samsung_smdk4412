@@ -284,7 +284,6 @@ static struct platform_driver rotary_encoder_driver = {
 		.owner	= THIS_MODULE,
 	}
 };
-
 module_platform_driver(rotary_encoder_driver);
 
 MODULE_ALIAS("platform:" DRV_NAME);

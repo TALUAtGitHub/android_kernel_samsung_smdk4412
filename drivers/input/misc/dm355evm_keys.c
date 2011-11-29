@@ -266,7 +266,6 @@ static struct platform_driver dm355evm_keys_driver = {
 		.name	= "dm355evm_keys",
 	},
 };
-
 module_platform_driver(dm355evm_keys_driver);
 
 MODULE_LICENSE("GPL");
