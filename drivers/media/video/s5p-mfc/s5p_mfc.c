@@ -1625,26 +1625,7 @@ static struct platform_driver s5p_mfc_driver = {
 	},
 };
 
-static char banner[] __initdata =
-			"S5P MFC V4L2 Driver, (c) 2010 Samsung Electronics\n";
-
-static int __init s5p_mfc_init(void)
-{
-	pr_info("%s", banner);
-	if (platform_driver_register(&s5p_mfc_driver) != 0) {
-		pr_err("Platform device registration failed..\n");
-		return -1;
-	}
-	return 0;
-}
-
-static void __devexit s5p_mfc_exit(void)
-{
-	platform_driver_unregister(&s5p_mfc_driver);
-}
-
-module_init(s5p_mfc_init);
-module_exit(s5p_mfc_exit);
+module_platform_driver(s5p_mfc_driver);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Kamil Debski <k.debski@samsung.com>");

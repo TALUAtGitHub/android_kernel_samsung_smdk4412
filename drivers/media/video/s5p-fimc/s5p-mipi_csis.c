@@ -692,18 +692,7 @@ static struct platform_driver s5p_csis_driver = {
 	},
 };
 
-static int __init s5p_csis_init(void)
-{
-	return platform_driver_probe(&s5p_csis_driver, s5p_csis_probe);
-}
-
-static void __exit s5p_csis_exit(void)
-{
-	platform_driver_unregister(&s5p_csis_driver);
-}
-
-module_init(s5p_csis_init);
-module_exit(s5p_csis_exit);
+module_platform_driver(s5p_csis_driver);
 
 MODULE_AUTHOR("Sylwester Nawrocki, <s.nawrocki@samsung.com>");
 MODULE_DESCRIPTION("S5P MIPI-CSI2 slave interface driver");
