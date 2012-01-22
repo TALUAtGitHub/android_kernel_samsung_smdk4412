@@ -2316,7 +2316,6 @@ static struct platform_driver max8997_muic_driver = {
 
 module_platform_driver(max8997_muic_driver);
 
-
 MODULE_DESCRIPTION("Maxim MAX8997 MUIC driver");
 MODULE_AUTHOR("<ms925.kim@samsung.com>");
 MODULE_LICENSE("GPL");
