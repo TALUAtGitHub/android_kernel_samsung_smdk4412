@@ -478,7 +478,7 @@ static long keyring_read(const struct key *keyring,
 /*
  * Allocate a keyring and link into the destination keyring.
  */
-struct key *keyring_alloc(const char *description, uid_t uid, gid_t gid,
+struct key *keyring_alloc(const char *description, kuid_t uid, kgid_t gid,
 			  const struct cred *cred, key_perm_t perm,
 			  unsigned long flags, struct key *dest)
 {
@@ -962,7 +962,7 @@ struct key *find_keyring_by_name(const char *name, bool skip_perm_check)
 				    &keyring_name_hash[bucket],
 				    type_data.link
 				    ) {
-			if (keyring->user->user_ns != current_user_ns())
+			if (!kuid_has_mapping(current_user_ns(), keyring->user->uid))
 				continue;
 
 			if (test_bit(KEY_FLAG_REVOKED, &keyring->flags))
