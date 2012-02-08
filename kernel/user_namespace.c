@@ -24,10 +24,9 @@ static struct kmem_cache *user_ns_cachep __read_mostly;
  */
 int create_user_ns(struct cred *new)
 {
-	struct user_namespace *ns;
-	struct user_struct *root_user;
-	kuid_t owner = make_kuid(new->user_ns, new->euid);
-	kgid_t group = make_kgid(new->user_ns, new->egid);
+	struct user_namespace *ns, *parent_ns = new->user_ns;
+	kuid_t owner = new->euid;
+	kgid_t group = new->egid;
 
 	/* The creator needs a mapping in the parent user namespace
 	 * or else we won't be able to reasonably tell userspace who
