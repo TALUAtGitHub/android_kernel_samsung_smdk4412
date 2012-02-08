@@ -18,6 +18,9 @@
 #include <linux/export.h>
 #include <linux/fsnotify.h>
 #include <linux/audit.h>
+#include <linux/vmalloc.h>
+#include <linux/posix_acl_xattr.h>
+
 #include <asm/uaccess.h>
 
 
@@ -273,9 +276,20 @@ setxattr(struct dentry *d, const char __user *name, const void __user *value,
 	if (size) {
 		if (size > XATTR_SIZE_MAX)
 			return -E2BIG;
-		kvalue = memdup_user(value, size);
-		if (IS_ERR(kvalue))
-			return PTR_ERR(kvalue);
+		kvalue = kmalloc(size, GFP_KERNEL | __GFP_NOWARN);
+		if (!kvalue) {
+			vvalue = vmalloc(size);
+			if (!vvalue)
+				return -ENOMEM;
+			kvalue = vvalue;
+		}
+		if (copy_from_user(kvalue, value, size)) {
+			error = -EFAULT;
+			goto out;
+		}
+		if ((strcmp(kname, XATTR_NAME_POSIX_ACL_ACCESS) == 0) ||
+		    (strcmp(kname, XATTR_NAME_POSIX_ACL_DEFAULT) == 0))
+			posix_acl_fix_xattr_from_user(kvalue, size);
 	}
 
 	error = vfs_setxattr(d, kname, kvalue, size, flags);
@@ -369,6 +383,9 @@ getxattr(struct dentry *d, const char __user *name, void __user *value,
 
 	error = vfs_getxattr(d, kname, kvalue, size);
 	if (error > 0) {
+		if ((strcmp(kname, XATTR_NAME_POSIX_ACL_ACCESS) == 0) ||
+		    (strcmp(kname, XATTR_NAME_POSIX_ACL_DEFAULT) == 0))
+			posix_acl_fix_xattr_to_user(kvalue, size);
 		if (size && copy_to_user(value, kvalue, error))
 			error = -EFAULT;
 	} else if (error == -ERANGE && size >= XATTR_SIZE_MAX) {
