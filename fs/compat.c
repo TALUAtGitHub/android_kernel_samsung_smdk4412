@@ -143,7 +143,10 @@ static int cp_compat_stat(struct kstat *stat, struct compat_stat __user *ubuf)
 	    !old_valid_dev(stat->dev) ||
 	    !old_valid_dev(stat->rdev))
 		return -EOVERFLOW;
-	if (sizeof(ino) < sizeof(stat->ino) && ino != stat->ino)
+	SET_UID(tmp.st_uid, from_kuid_munged(current_user_ns(), stat->uid));
+	SET_GID(tmp.st_gid, from_kgid_munged(current_user_ns(), stat->gid));
+	tmp.st_rdev = old_encode_dev(stat->rdev);
+	if ((u64) stat->size > MAX_NON_LFS)
 		return -EOVERFLOW;
 
 	if (clear_user(ubuf, sizeof(*ubuf)))
