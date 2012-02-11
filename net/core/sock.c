@@ -743,6 +743,11 @@ set_rcvbuf:
 		else
 			ret = -EOPNOTSUPP;
 		break;
+
+	case SO_NOFCS:
+		sock_valbool_flag(sk, SOCK_NOFCS, valbool);
+		break;
+
 	default:
 		ret = -ENOPROTOOPT;
 		break;
