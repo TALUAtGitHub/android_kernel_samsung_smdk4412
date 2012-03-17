@@ -12,6 +12,7 @@ obj-$(CONFIG_TOUCHSCREEN_AD7879)	+= ad7879.o
 obj-$(CONFIG_TOUCHSCREEN_AD7879_I2C)	+= ad7879-i2c.o
 obj-$(CONFIG_TOUCHSCREEN_AD7879_SPI)	+= ad7879-spi.o
 obj-$(CONFIG_TOUCHSCREEN_ADS7846)	+= ads7846.o
+obj-$(CONFIG_TOUCHSCREEN_AUO_PIXCIR)	+= auo-pixcir-ts.o
 obj-$(CONFIG_TOUCHSCREEN_ATMEL_MXT)	+= atmel_mxt_ts.o
 obj-$(CONFIG_TOUCHSCREEN_ATMEL_MXT224)	+= mxt224.o
 obj-$(CONFIG_TOUCHSCREEN_ATMEL_MXT224_GC)	+= mxt224_gc.o
@@ -24,6 +25,9 @@ obj-$(CONFIG_TOUCHSCREEN_ATMEL_TSADCC)	+= atmel_tsadcc.o
 obj-$(CONFIG_TOUCHSCREEN_BITSY)		+= h3600_ts_input.o
 obj-$(CONFIG_TOUCHSCREEN_BU21013)       += bu21013_ts.o
 obj-$(CONFIG_TOUCHSCREEN_CY8CTMG110)	+= cy8ctmg110_ts.o
+obj-$(CONFIG_TOUCHSCREEN_CYTTSP_CORE)	+= cyttsp_core.o
+obj-$(CONFIG_TOUCHSCREEN_CYTTSP_I2C)	+= cyttsp_i2c.o
+obj-$(CONFIG_TOUCHSCREEN_CYTTSP_SPI)	+= cyttsp_spi.o
 obj-$(CONFIG_TOUCHSCREEN_DA9034)	+= da9034-ts.o
 obj-$(CONFIG_TOUCHSCREEN_DYNAPRO)	+= dynapro.o
 obj-$(CONFIG_TOUCHSCREEN_HAMPSHIRE)	+= hampshire.o
@@ -86,7 +90,6 @@ obj-$(CONFIG_TOUCHSCREEN_MXT768E)	+= mxt768e.o
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_S7301)      += synaptics_s7301.o synaptics_fw_updater.o synaptics_sysfs.o
 obj-$(CONFIG_KEYPAD_MELFAS_TOUCH)                += grande_touchkey.o grande_download.o
 obj-$(CONFIG_TOUCHSCREEN_ATMEL_MXT540S)       += mxt540s.o
-obj-$(CONFIG_TOUCHSCREEN_CYTTSP4)   += cyttsp4_i2c.o cyttsp4_core.o
 
 ifeq ($(TARGET_BUILD_VARIANT), eng)
 KBUILD_CFLAGS		+= -DSEC_TSP_EVENT_DEBUG

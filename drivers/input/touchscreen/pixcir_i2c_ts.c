@@ -1001,42 +1001,7 @@ static struct i2c_driver pixcir_i2c_ts_driver = {
 	.id_table	= pixcir_i2c_ts_id,
 };
 
-static int __init pixcir_i2c_ts_init(void)
-{
-	int ret;
-
-	pixcir_wq = create_singlethread_workqueue("pixcir_wq");
-
-	if (!pixcir_wq)
-		return -ENOMEM;
-
-	ret = register_chrdev(I2C_MAJOR, "pixcir_i2c_ts", &pixcir_i2c_ts_fops);
-	if (ret) {
-		printk(KERN_ERR "%s:register chrdev failed\n", __FILE__);
-		return ret;
-	}
-
-	i2c_dev_class = class_create(THIS_MODULE, "pixcir_i2c_dev");
-
-	if (IS_ERR(i2c_dev_class)) {
-		ret = PTR_ERR(i2c_dev_class);
-		class_destroy(i2c_dev_class);
-	}
-
-	return i2c_add_driver(&pixcir_i2c_ts_driver);
-}
-
-static void __exit pixcir_i2c_ts_exit(void)
-{
-	i2c_del_driver(&pixcir_i2c_ts_driver);
-	class_destroy(i2c_dev_class);
-	unregister_chrdev(I2C_MAJOR, "pixcir_i2c_ts");
-	if (pixcir_wq)
-		destroy_workqueue(pixcir_wq);
-}
-
-module_init(pixcir_i2c_ts_init);
-module_exit(pixcir_i2c_ts_exit);
+module_i2c_driver(pixcir_i2c_ts_driver);
 
 MODULE_AUTHOR("Dongsu Ha <dsfine.ha@samsung.com>, "
 	      "Bee<http://www.pixcir.com.cn>, "
