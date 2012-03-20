@@ -1411,23 +1411,8 @@ static struct of_platform_driver data_of_driver = {
 	},
 };
 
-/*
- * Module Init / Exit
- */
-
-static int __init data_init(void)
-{
-	return of_register_platform_driver(&data_of_driver);
-}
-
-static void __exit data_exit(void)
-{
-	of_unregister_platform_driver(&data_of_driver);
-}
+module_platform_driver(data_of_driver);
 
 MODULE_AUTHOR("Ira W. Snyder <iws@ovro.caltech.edu>");
 MODULE_DESCRIPTION("CARMA DATA-FPGA Access Driver");
 MODULE_LICENSE("GPL");
-
-module_init(data_init);
-module_exit(data_exit);

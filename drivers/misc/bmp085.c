@@ -87,7 +87,7 @@ struct bmp085_data {
 	u32 raw_temperature;
 	u32 raw_pressure;
 	unsigned char oversampling_setting;
-	u32 last_temp_measurement;
+	unsigned long last_temp_measurement;
 	s32 b6; /* calculated temperature correction coefficient */
 };
 
@@ -234,7 +234,8 @@ static s32 bmp085_get_pressure(struct bmp085_data *data, int *pressure)
 	int status;
 
 	/* alt least every second force an update of the ambient temperature */
-	if (data->last_temp_measurement + 1*HZ < jiffies) {
+	if (data->last_temp_measurement == 0 ||
+			time_is_before_jiffies(data->last_temp_measurement + 1*HZ)) {
 		status = bmp085_get_temperature(data, NULL);
 		if (status != 0)
 			goto exit;
