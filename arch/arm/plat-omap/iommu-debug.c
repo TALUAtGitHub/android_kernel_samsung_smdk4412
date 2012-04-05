@@ -317,15 +317,9 @@ err_out:
 	return count;
 }
 
-static int debug_open_generic(struct inode *inode, struct file *file)
-{
-	file->private_data = inode->i_private;
-	return 0;
-}
-
 #define DEBUG_FOPS(name)						\
 	static const struct file_operations debug_##name##_fops = {	\
-		.open = debug_open_generic,				\
+		.open = simple_open,					\
 		.read = debug_read_##name,				\
 		.write = debug_write_##name,				\
 		.llseek = generic_file_llseek,				\
@@ -333,7 +327,7 @@ static int debug_open_generic(struct inode *inode, struct file *file)
 
 #define DEBUG_FOPS_RO(name)						\
 	static const struct file_operations debug_##name##_fops = {	\
-		.open = debug_open_generic,				\
+		.open = simple_open,					\
 		.read = debug_read_##name,				\
 		.llseek = generic_file_llseek,				\
 	};
