@@ -432,7 +432,7 @@ probe_error:
 /*
  * "driver" definition
  */
-static struct platform_driver driver = {
+static struct platform_driver sh_dac_driver = {
 	.probe	= snd_sh_dac_probe,
 	.remove = snd_sh_dac_remove,
 	.driver = {
@@ -440,4 +440,4 @@ static struct platform_driver driver = {
 	},
 };
 
-module_platform_driver(driver);
+module_platform_driver(sh_dac_driver);
