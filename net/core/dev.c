@@ -4379,9 +4379,9 @@ static void dev_change_rx_flags(struct net_device *dev, int flags)
 
 static int __dev_set_promiscuity(struct net_device *dev, int inc)
 {
-	unsigned short old_flags = dev->flags;
-	uid_t uid;
-	gid_t gid;
+	unsigned int old_flags = dev->flags;
+	kuid_t uid;
+	kgid_t gid;
 
 	ASSERT_RTNL();
 
