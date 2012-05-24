@@ -1131,7 +1131,7 @@ void setup_new_exec(struct linux_binprm * bprm)
 	/* This is the point of no return */
 	current->sas_ss_sp = current->sas_ss_size = 0;
 
-	if (current_euid() == current_uid() && current_egid() == current_gid())
+	if (uid_eq(current_euid(), current_uid()) && gid_eq(current_egid(), current_gid()))
 		set_dumpable(current->mm, 1);
 	else
 		set_dumpable(current->mm, suid_dumpable);
@@ -1156,8 +1156,8 @@ void setup_new_exec(struct linux_binprm * bprm)
 	current->mm->task_size = TASK_SIZE;
 
 	/* install the new credentials */
-	if (bprm->cred->uid != current_euid() ||
-	    bprm->cred->gid != current_egid()) {
+	if (!uid_eq(bprm->cred->uid, current_euid()) ||
+	    !gid_eq(bprm->cred->gid, current_egid())) {
 		current->pdeath_signal = 0;
 	} else {
 		would_dump(bprm, bprm->file);
@@ -1338,12 +1338,39 @@ static void bprm_fill_uid(struct linux_binprm *bprm)
  */
 int prepare_binprm(struct linux_binprm *bprm)
 {
+        umode_t mode;
+        struct inode * inode = file_inode(bprm->file);
 	int retval;
 
+        mode = inode->i_mode;
 	if (bprm->file->f_op == NULL)
 		return -EACCES;
 
-	bprm_fill_uid(bprm);
+	/* clear any previous set[ug]id data from a previous binary */
+	bprm->cred->euid = current_euid();
+	bprm->cred->egid = current_egid();
+
+        if (!(bprm->file->f_path.mnt->mnt_flags & MNT_NOSUID) &&
+            !task_no_new_privs(current) &&
+            kuid_has_mapping(bprm->cred->user_ns, inode->i_uid) &&
+            kgid_has_mapping(bprm->cred->user_ns, inode->i_gid)) {
+                /* Set-uid? */
+                if (mode & S_ISUID) {
+                        bprm->per_clear |= PER_CLEAR_ON_SETID;
+                        bprm->cred->euid = inode->i_uid;
+                }
+
+                /* Set-gid? */
+                /*
+                 * If setgid is set but no group execute bit then this
+                 * is a candidate for mandatory locking, not a setgid
+                 * executable.
+                 */
+                if ((mode & (S_ISGID | S_IXGRP)) == (S_ISGID | S_IXGRP)) {
+                        bprm->per_clear |= PER_CLEAR_ON_SETID;
+                        bprm->cred->egid = inode->i_gid;
+                }
+	}
 
 	/* fill in binprm security blob */
 	retval = security_bprm_set_creds(bprm);
@@ -2130,7 +2157,7 @@ void do_coredump(long signr, int exit_code, struct pt_regs *regs)
 	if (__get_dumpable(cprm.mm_flags) == 2) {
 		/* Setuid core dump mode */
 		flag = O_EXCL;		/* Stop rewrite attacks */
-		cred->fsuid = 0;	/* Dump root private */
+		cred->fsuid = GLOBAL_ROOT_UID;	/* Dump root private */
 	}
 
 	retval = coredump_wait(exit_code, &core_state);
@@ -2231,7 +2258,7 @@ void do_coredump(long signr, int exit_code, struct pt_regs *regs)
 		 * Dont allow local users get cute and trick others to coredump
 		 * into their pre-created files.
 		 */
-		if (inode->i_uid != current_fsuid())
+		if (!uid_eq(inode->i_uid, current_fsuid()))
 			goto close_fail;
 		if (!cprm.file->f_op || !cprm.file->f_op->write)
 			goto close_fail;
