@@ -6,9 +6,6 @@
 #include <linux/sched.h>
 #include <linux/err.h>
 
-#define UIDHASH_BITS	(CONFIG_BASE_SMALL ? 3 : 7)
-#define UIDHASH_SZ	(1 << UIDHASH_BITS)
-
 #define UID_GID_MAP_MAX_EXTENTS 5
 
 struct uid_gid_map {	/* 64 bytes -- 1 cache line */
@@ -25,7 +22,6 @@ struct user_namespace {
 	struct uid_gid_map	gid_map;
 	struct uid_gid_map	projid_map;
 	struct kref		kref;
-	struct hlist_head	uidhash_table[UIDHASH_SZ];
 	struct user_namespace	*parent;
         struct user_struct      *creator;
         struct work_struct      destroyer;
