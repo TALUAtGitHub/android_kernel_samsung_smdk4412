@@ -265,8 +265,8 @@ struct ext3_new_group_data {
  */
 struct ext3_mount_options {
 	unsigned long s_mount_opt;
-	uid_t s_resuid;
-	gid_t s_resgid;
+	kuid_t s_resuid;
+	kgid_t s_resgid;
 	unsigned long s_commit_interval;
 #ifdef CONFIG_QUOTA
 	int s_jquota_fmt;
@@ -531,9 +531,197 @@ struct ext3_super_block {
 	__u32   s_reserved[162];        /* Padding to the end of the block */
 };
 
-#ifdef __KERNEL__
-#include <linux/ext3_fs_i.h>
-#include <linux/ext3_fs_sb.h>
+/* data type for block offset of block group */
+typedef int ext3_grpblk_t;
+
+/* data type for filesystem-wide blocks number */
+typedef unsigned long ext3_fsblk_t;
+
+#define E3FSBLK "%lu"
+
+struct ext3_reserve_window {
+	ext3_fsblk_t	_rsv_start;	/* First byte reserved */
+	ext3_fsblk_t	_rsv_end;	/* Last byte reserved or 0 */
+};
+
+struct ext3_reserve_window_node {
+	struct rb_node		rsv_node;
+	__u32			rsv_goal_size;
+	__u32			rsv_alloc_hit;
+	struct ext3_reserve_window	rsv_window;
+};
+
+struct ext3_block_alloc_info {
+	/* information about reservation window */
+	struct ext3_reserve_window_node	rsv_window_node;
+	/*
+	 * was i_next_alloc_block in ext3_inode_info
+	 * is the logical (file-relative) number of the
+	 * most-recently-allocated block in this file.
+	 * We use this for detecting linearly ascending allocation requests.
+	 */
+	__u32                   last_alloc_logical_block;
+	/*
+	 * Was i_next_alloc_goal in ext3_inode_info
+	 * is the *physical* companion to i_next_alloc_block.
+	 * it the physical block number of the block which was most-recentl
+	 * allocated to this file.  This give us the goal (target) for the next
+	 * allocation when we detect linearly ascending requests.
+	 */
+	ext3_fsblk_t		last_alloc_physical_block;
+};
+
+#define rsv_start rsv_window._rsv_start
+#define rsv_end rsv_window._rsv_end
+
+/*
+ * third extended file system inode data in memory
+ */
+struct ext3_inode_info {
+	__le32	i_data[15];	/* unconverted */
+	__u32	i_flags;
+#ifdef EXT3_FRAGMENTS
+	__u32	i_faddr;
+	__u8	i_frag_no;
+	__u8	i_frag_size;
+#endif
+	ext3_fsblk_t	i_file_acl;
+	__u32	i_dir_acl;
+	__u32	i_dtime;
+
+	/*
+	 * i_block_group is the number of the block group which contains
+	 * this file's inode.  Constant across the lifetime of the inode,
+	 * it is ued for making block allocation decisions - we try to
+	 * place a file's data blocks near its inode block, and new inodes
+	 * near to their parent directory's inode.
+	 */
+	__u32	i_block_group;
+	unsigned long	i_state_flags;	/* Dynamic state flags for ext3 */
+
+	/* block reservation info */
+	struct ext3_block_alloc_info *i_block_alloc_info;
+
+	__u32	i_dir_start_lookup;
+#ifdef CONFIG_EXT3_FS_XATTR
+	/*
+	 * Extended attributes can be read independently of the main file
+	 * data. Taking i_mutex even when reading would cause contention
+	 * between readers of EAs and writers of regular file data, so
+	 * instead we synchronize on xattr_sem when reading or changing
+	 * EAs.
+	 */
+	struct rw_semaphore xattr_sem;
+#endif
+
+	struct list_head i_orphan;	/* unlinked but open inodes */
+
+	/*
+	 * i_disksize keeps track of what the inode size is ON DISK, not
+	 * in memory.  During truncate, i_size is set to the new size by
+	 * the VFS prior to calling ext3_truncate(), but the filesystem won't
+	 * set i_disksize to 0 until the truncate is actually under way.
+	 *
+	 * The intent is that i_disksize always represents the blocks which
+	 * are used by this file.  This allows recovery to restart truncate
+	 * on orphans if we crash during truncate.  We actually write i_disksize
+	 * into the on-disk inode when writing inodes out, instead of i_size.
+	 *
+	 * The only time when i_disksize and i_size may be different is when
+	 * a truncate is in progress.  The only things which change i_disksize
+	 * are ext3_get_block (growth) and ext3_truncate (shrinkth).
+	 */
+	loff_t	i_disksize;
+
+	/* on-disk additional length */
+	__u16 i_extra_isize;
+
+	/*
+	 * truncate_mutex is for serialising ext3_truncate() against
+	 * ext3_getblock().  In the 2.4 ext2 design, great chunks of inode's
+	 * data tree are chopped off during truncate. We can't do that in
+	 * ext3 because whenever we perform intermediate commits during
+	 * truncate, the inode and all the metadata blocks *must* be in a
+	 * consistent state which allows truncation of the orphans to restart
+	 * during recovery.  Hence we must fix the get_block-vs-truncate race
+	 * by other means, so we have truncate_mutex.
+	 */
+	struct mutex truncate_mutex;
+
+	/*
+	 * Transactions that contain inode's metadata needed to complete
+	 * fsync and fdatasync, respectively.
+	 */
+	atomic_t i_sync_tid;
+	atomic_t i_datasync_tid;
+
+	struct inode vfs_inode;
+};
+
+/*
+ * third extended-fs super-block data in memory
+ */
+struct ext3_sb_info {
+	unsigned long s_frag_size;	/* Size of a fragment in bytes */
+	unsigned long s_frags_per_block;/* Number of fragments per block */
+	unsigned long s_inodes_per_block;/* Number of inodes per block */
+	unsigned long s_frags_per_group;/* Number of fragments in a group */
+	unsigned long s_blocks_per_group;/* Number of blocks in a group */
+	unsigned long s_inodes_per_group;/* Number of inodes in a group */
+	unsigned long s_itb_per_group;	/* Number of inode table blocks per group */
+	unsigned long s_gdb_count;	/* Number of group descriptor blocks */
+	unsigned long s_desc_per_block;	/* Number of group descriptors per block */
+	unsigned long s_groups_count;	/* Number of groups in the fs */
+	unsigned long s_overhead_last;  /* Last calculated overhead */
+	unsigned long s_blocks_last;    /* Last seen block count */
+	struct buffer_head * s_sbh;	/* Buffer containing the super block */
+	struct ext3_super_block * s_es;	/* Pointer to the super block in the buffer */
+	struct buffer_head ** s_group_desc;
+	unsigned long  s_mount_opt;
+	ext3_fsblk_t s_sb_block;
+	kuid_t s_resuid;
+	kgid_t s_resgid;
+	unsigned short s_mount_state;
+	unsigned short s_pad;
+	int s_addr_per_block_bits;
+	int s_desc_per_block_bits;
+	int s_inode_size;
+	int s_first_ino;
+	spinlock_t s_next_gen_lock;
+	u32 s_next_generation;
+	u32 s_hash_seed[4];
+	int s_def_hash_version;
+	int s_hash_unsigned;	/* 3 if hash should be signed, 0 if not */
+	struct percpu_counter s_freeblocks_counter;
+	struct percpu_counter s_freeinodes_counter;
+	struct percpu_counter s_dirs_counter;
+	struct blockgroup_lock *s_blockgroup_lock;
+
+	/* root of the per fs reservation window tree */
+	spinlock_t s_rsv_window_lock;
+	struct rb_root s_rsv_window_root;
+	struct ext3_reserve_window_node s_rsv_window_head;
+
+	/* Journaling */
+	struct inode * s_journal_inode;
+	struct journal_s * s_journal;
+	struct list_head s_orphan;
+	struct mutex s_orphan_lock;
+	struct mutex s_resize_lock;
+	unsigned long s_commit_interval;
+	struct block_device *journal_bdev;
+#ifdef CONFIG_QUOTA
+	char *s_qf_names[MAXQUOTAS];		/* Names of quota files with journalled quota */
+	int s_jquota_fmt;			/* Format of quota to use */
+#endif
+};
+
+static inline spinlock_t *
+sb_bgl_lock(struct ext3_sb_info *sbi, unsigned int block_group)
+{
+	return bgl_lock_ptr(sbi->s_blockgroup_lock, block_group);
+}
+
 static inline struct ext3_sb_info * EXT3_SB(struct super_block *sb)
 {
 	return sb->s_fs_info;

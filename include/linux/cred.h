@@ -73,8 +73,8 @@ extern int groups_search(const struct group_info *, kgid_t);
 #define GROUP_AT(gi, i) \
 	((gi)->blocks[(i) / NGROUPS_PER_BLOCK][(i) % NGROUPS_PER_BLOCK])
 
-extern int in_group_p(gid_t);
-extern int in_egroup_p(gid_t);
+extern int in_group_p(kgid_t);
+extern int in_egroup_p(kgid_t);
 
 /*
  * The common credentials for a thread group
@@ -148,7 +148,7 @@ struct cred {
 	void		*security;	/* subjective LSM security */
 #endif
 	struct user_struct *user;	/* real user ID subscription */
-	struct user_namespace *user_ns; /* cached user->user_ns */
+	struct user_namespace *user_ns; /* user_ns the caps and keyrings are relative to. */
 	struct group_info *group_info;	/* supplementary groups for euid/fsgid */
 	struct rcu_head	rcu;		/* RCU deletion hook */
 };
@@ -366,11 +366,11 @@ static inline void put_cred(const struct cred *_cred)
 #define current_user()		(current_cred_xxx(user))
 #define current_security()	(current_cred_xxx(security))
 
+extern struct user_namespace init_user_ns;
 #ifdef CONFIG_USER_NS
 #define current_user_ns()	(current_cred_xxx(user_ns))
 #define task_user_ns(task)	(task_cred_xxx((task), user_ns))
 #else
-extern struct user_namespace init_user_ns;
 #define current_user_ns()	(&init_user_ns)
 #define task_user_ns(task)	(&init_user_ns)
 #endif
