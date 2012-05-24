@@ -1438,6 +1438,22 @@ out:
 }
 EXPORT_SYMBOL(generic_setlease);
 
+int generic_delete_lease(struct file *filp, struct file_lock **flp)
+{
+	struct file_lock *fl, **before;
+	struct dentry *dentry = filp->f_path.dentry;
+	struct inode *inode = dentry->d_inode;
+
+	for (before = &inode->i_flock;
+			((fl = *before) != NULL) && IS_LEASE(fl);
+			before = &fl->fl_next) {
+		if (fl->fl_file != filp)
+			continue;
+		return (*flp)->fl_lmops->fl_change(before, F_UNLCK);
+	}
+	return -EAGAIN;
+}
+
 static int __vfs_setlease(struct file *filp, long arg, struct file_lock **lease)
 {
 	if (filp->f_op && filp->f_op->setlease)
