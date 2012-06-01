@@ -458,7 +458,7 @@ int security_path_chmod(struct dentry *dentry, struct vfsmount *mnt,
 	return security_ops->path_chmod(dentry, mnt, mode);
 }
 
-int security_path_chown(struct path *path, uid_t uid, gid_t gid)
+int security_path_chown(struct path *path, kuid_t uid, kgid_t gid)
 {
 	if (unlikely(IS_PRIVATE(path->dentry->d_inode)))
 		return 0;
