@@ -353,7 +353,7 @@ static int apparmor_path_chmod(struct dentry *dentry, struct vfsmount *mnt,
 	return common_perm_mnt_dentry(OP_CHMOD, mnt, dentry, AA_MAY_CHMOD);
 }
 
-static int apparmor_path_chown(struct path *path, uid_t uid, gid_t gid)
+static int apparmor_path_chown(struct path *path, kuid_t uid, kgid_t gid)
 {
 	struct path_cond cond =  { path->dentry->d_inode->i_uid,
 				   path->dentry->d_inode->i_mode
