@@ -77,7 +77,7 @@ static int nvec_ps2_notifier(struct notifier_block *nb,
 }
 
 
-int __init nvec_ps2(struct nvec_chip *nvec)
+static int __devinit nvec_mouse_probe(struct platform_device *pdev)
 {
 	struct serio *ser_dev = kzalloc(sizeof(struct serio), GFP_KERNEL);
 
@@ -101,3 +101,44 @@ int __init nvec_ps2(struct nvec_chip *nvec)
 
 	return 0;
 }
+
+static int nvec_mouse_suspend(struct platform_device *pdev, pm_message_t state)
+{
+	struct nvec_chip *nvec = dev_get_drvdata(pdev->dev.parent);
+
+	/* disable mouse */
+	nvec_write_async(nvec, "\x06\xf4", 2);
+
+	/* send cancel autoreceive */
+	nvec_write_async(nvec, "\x06\x04", 2);
+
+	return 0;
+}
+
+static int nvec_mouse_resume(struct platform_device *pdev)
+{
+	struct nvec_chip *nvec = dev_get_drvdata(pdev->dev.parent);
+
+	ps2_startstreaming(ps2_dev.ser_dev);
+
+	/* enable mouse */
+	nvec_write_async(nvec, "\x06\xf5", 2);
+
+	return 0;
+}
+
+static struct platform_driver nvec_mouse_driver = {
+	.probe  = nvec_mouse_probe,
+	.suspend = nvec_mouse_suspend,
+	.resume = nvec_mouse_resume,
+	.driver = {
+		.name = "nvec-mouse",
+		.owner = THIS_MODULE,
+	},
+};
+
+module_platform_driver(nvec_mouse_driver);
+
+MODULE_DESCRIPTION("NVEC mouse driver");
+MODULE_AUTHOR("Marc Dietrich <marvin24@gmx.de>");
+MODULE_LICENSE("GPL");
