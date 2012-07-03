@@ -285,7 +285,7 @@ static void regulator_led_shutdown(struct platform_device *pdev)
 	return;
 }
 
-static struct platform_driver regulator_led_driver = {
+static struct platform_driver max8997_led_driver = {
 	.driver = {
 		   .name  = "leds-max8997",
 		   .owner = THIS_MODULE,
@@ -295,17 +295,7 @@ static struct platform_driver regulator_led_driver = {
 	.shutdown = regulator_led_shutdown,
 };
 
-static int __init regulator_led_init(void)
-{
-	return platform_driver_register(&regulator_led_driver);
-}
-module_init(regulator_led_init);
-
-static void __exit regulator_led_exit(void)
-{
-	platform_driver_unregister(&regulator_led_driver);
-}
-module_exit(regulator_led_exit);
+module_platform_driver(max8997_led_driver);
 
 MODULE_AUTHOR("Byun.C.W");
 MODULE_DESCRIPTION("MAX8997 LED driver");
