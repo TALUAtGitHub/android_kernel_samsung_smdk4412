@@ -1596,37 +1596,7 @@ static struct platform_driver __refdata soc_camera_pdrv = {
 	},
 };
 
-static int __init soc_camera_init(void)
-{
-	int ret = bus_register(&soc_camera_bus_type);
-	if (ret)
-		return ret;
-	ret = driver_register(&ic_drv);
-	if (ret)
-		goto edrvr;
-
-	ret = platform_driver_probe(&soc_camera_pdrv, soc_camera_pdrv_probe);
-	if (ret)
-		goto epdr;
-
-	return 0;
-
-epdr:
-	driver_unregister(&ic_drv);
-edrvr:
-	bus_unregister(&soc_camera_bus_type);
-	return ret;
-}
-
-static void __exit soc_camera_exit(void)
-{
-	platform_driver_unregister(&soc_camera_pdrv);
-	driver_unregister(&ic_drv);
-	bus_unregister(&soc_camera_bus_type);
-}
-
-module_init(soc_camera_init);
-module_exit(soc_camera_exit);
+module_platform_driver(soc_camera_pdrv);
 
 MODULE_DESCRIPTION("Image capture bus driver");
 MODULE_AUTHOR("Guennadi Liakhovetski <kernel@pengutronix.de>");
