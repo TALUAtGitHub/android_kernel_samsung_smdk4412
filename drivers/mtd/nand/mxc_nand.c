@@ -1037,7 +1037,218 @@ static struct nand_bbt_descr bbt_mirror_descr = {
 	.pattern = mirror_pattern,
 };
 
-static int __init mxcnd_probe(struct platform_device *pdev)
+/* v1 + irqpending_quirk: i.MX21 */
+static const struct mxc_nand_devtype_data imx21_nand_devtype_data = {
+	.preset = preset_v1,
+	.send_cmd = send_cmd_v1_v2,
+	.send_addr = send_addr_v1_v2,
+	.send_page = send_page_v1,
+	.send_read_id = send_read_id_v1_v2,
+	.get_dev_status = get_dev_status_v1_v2,
+	.check_int = check_int_v1_v2,
+	.irq_control = irq_control_v1_v2,
+	.get_ecc_status = get_ecc_status_v1,
+	.ecclayout_512 = &nandv1_hw_eccoob_smallpage,
+	.ecclayout_2k = &nandv1_hw_eccoob_largepage,
+	.ecclayout_4k = &nandv1_hw_eccoob_smallpage, /* XXX: needs fix */
+	.select_chip = mxc_nand_select_chip_v1_v3,
+	.correct_data = mxc_nand_correct_data_v1,
+	.irqpending_quirk = 1,
+	.needs_ip = 0,
+	.regs_offset = 0xe00,
+	.spare0_offset = 0x800,
+	.spare_len = 16,
+	.eccbytes = 3,
+	.eccsize = 1,
+};
+
+/* v1 + !irqpending_quirk: i.MX27, i.MX31 */
+static const struct mxc_nand_devtype_data imx27_nand_devtype_data = {
+	.preset = preset_v1,
+	.send_cmd = send_cmd_v1_v2,
+	.send_addr = send_addr_v1_v2,
+	.send_page = send_page_v1,
+	.send_read_id = send_read_id_v1_v2,
+	.get_dev_status = get_dev_status_v1_v2,
+	.check_int = check_int_v1_v2,
+	.irq_control = irq_control_v1_v2,
+	.get_ecc_status = get_ecc_status_v1,
+	.ecclayout_512 = &nandv1_hw_eccoob_smallpage,
+	.ecclayout_2k = &nandv1_hw_eccoob_largepage,
+	.ecclayout_4k = &nandv1_hw_eccoob_smallpage, /* XXX: needs fix */
+	.select_chip = mxc_nand_select_chip_v1_v3,
+	.correct_data = mxc_nand_correct_data_v1,
+	.irqpending_quirk = 0,
+	.needs_ip = 0,
+	.regs_offset = 0xe00,
+	.spare0_offset = 0x800,
+	.axi_offset = 0,
+	.spare_len = 16,
+	.eccbytes = 3,
+	.eccsize = 1,
+};
+
+/* v21: i.MX25, i.MX35 */
+static const struct mxc_nand_devtype_data imx25_nand_devtype_data = {
+	.preset = preset_v2,
+	.send_cmd = send_cmd_v1_v2,
+	.send_addr = send_addr_v1_v2,
+	.send_page = send_page_v2,
+	.send_read_id = send_read_id_v1_v2,
+	.get_dev_status = get_dev_status_v1_v2,
+	.check_int = check_int_v1_v2,
+	.irq_control = irq_control_v1_v2,
+	.get_ecc_status = get_ecc_status_v2,
+	.ecclayout_512 = &nandv2_hw_eccoob_smallpage,
+	.ecclayout_2k = &nandv2_hw_eccoob_largepage,
+	.ecclayout_4k = &nandv2_hw_eccoob_4k,
+	.select_chip = mxc_nand_select_chip_v2,
+	.correct_data = mxc_nand_correct_data_v2_v3,
+	.irqpending_quirk = 0,
+	.needs_ip = 0,
+	.regs_offset = 0x1e00,
+	.spare0_offset = 0x1000,
+	.axi_offset = 0,
+	.spare_len = 64,
+	.eccbytes = 9,
+	.eccsize = 0,
+};
+
+/* v3.2a: i.MX51 */
+static const struct mxc_nand_devtype_data imx51_nand_devtype_data = {
+	.preset = preset_v3,
+	.send_cmd = send_cmd_v3,
+	.send_addr = send_addr_v3,
+	.send_page = send_page_v3,
+	.send_read_id = send_read_id_v3,
+	.get_dev_status = get_dev_status_v3,
+	.check_int = check_int_v3,
+	.irq_control = irq_control_v3,
+	.get_ecc_status = get_ecc_status_v3,
+	.ecclayout_512 = &nandv2_hw_eccoob_smallpage,
+	.ecclayout_2k = &nandv2_hw_eccoob_largepage,
+	.ecclayout_4k = &nandv2_hw_eccoob_smallpage, /* XXX: needs fix */
+	.select_chip = mxc_nand_select_chip_v1_v3,
+	.correct_data = mxc_nand_correct_data_v2_v3,
+	.irqpending_quirk = 0,
+	.needs_ip = 1,
+	.regs_offset = 0,
+	.spare0_offset = 0x1000,
+	.axi_offset = 0x1e00,
+	.spare_len = 64,
+	.eccbytes = 0,
+	.eccsize = 0,
+	.ppb_shift = 7,
+};
+
+/* v3.2b: i.MX53 */
+static const struct mxc_nand_devtype_data imx53_nand_devtype_data = {
+	.preset = preset_v3,
+	.send_cmd = send_cmd_v3,
+	.send_addr = send_addr_v3,
+	.send_page = send_page_v3,
+	.send_read_id = send_read_id_v3,
+	.get_dev_status = get_dev_status_v3,
+	.check_int = check_int_v3,
+	.irq_control = irq_control_v3,
+	.get_ecc_status = get_ecc_status_v3,
+	.ecclayout_512 = &nandv2_hw_eccoob_smallpage,
+	.ecclayout_2k = &nandv2_hw_eccoob_largepage,
+	.ecclayout_4k = &nandv2_hw_eccoob_smallpage, /* XXX: needs fix */
+	.select_chip = mxc_nand_select_chip_v1_v3,
+	.correct_data = mxc_nand_correct_data_v2_v3,
+	.irqpending_quirk = 0,
+	.needs_ip = 1,
+	.regs_offset = 0,
+	.spare0_offset = 0x1000,
+	.axi_offset = 0x1e00,
+	.spare_len = 64,
+	.eccbytes = 0,
+	.eccsize = 0,
+	.ppb_shift = 8,
+};
+
+#ifdef CONFIG_OF_MTD
+static const struct of_device_id mxcnd_dt_ids[] = {
+	{
+		.compatible = "fsl,imx21-nand",
+		.data = &imx21_nand_devtype_data,
+	}, {
+		.compatible = "fsl,imx27-nand",
+		.data = &imx27_nand_devtype_data,
+	}, {
+		.compatible = "fsl,imx25-nand",
+		.data = &imx25_nand_devtype_data,
+	}, {
+		.compatible = "fsl,imx51-nand",
+		.data = &imx51_nand_devtype_data,
+	}, {
+		.compatible = "fsl,imx53-nand",
+		.data = &imx53_nand_devtype_data,
+	},
+	{ /* sentinel */ }
+};
+
+static int __init mxcnd_probe_dt(struct mxc_nand_host *host)
+{
+	struct device_node *np = host->dev->of_node;
+	struct mxc_nand_platform_data *pdata = &host->pdata;
+	const struct of_device_id *of_id =
+		of_match_device(mxcnd_dt_ids, host->dev);
+	int buswidth;
+
+	if (!np)
+		return 1;
+
+	if (of_get_nand_ecc_mode(np) >= 0)
+		pdata->hw_ecc = 1;
+
+	pdata->flash_bbt = of_get_nand_on_flash_bbt(np);
+
+	buswidth = of_get_nand_bus_width(np);
+	if (buswidth < 0)
+		return buswidth;
+
+	pdata->width = buswidth / 8;
+
+	host->devtype_data = of_id->data;
+
+	return 0;
+}
+#else
+static int __init mxcnd_probe_dt(struct mxc_nand_host *host)
+{
+	return 1;
+}
+#endif
+
+static int __init mxcnd_probe_pdata(struct mxc_nand_host *host)
+{
+	struct mxc_nand_platform_data *pdata = host->dev->platform_data;
+
+	if (!pdata)
+		return -ENODEV;
+
+	host->pdata = *pdata;
+
+	if (nfc_is_v1()) {
+		if (cpu_is_mx21())
+			host->devtype_data = &imx21_nand_devtype_data;
+		else
+			host->devtype_data = &imx27_nand_devtype_data;
+	} else if (nfc_is_v21()) {
+		host->devtype_data = &imx25_nand_devtype_data;
+	} else if (nfc_is_v3_2a()) {
+		host->devtype_data = &imx51_nand_devtype_data;
+	} else if (nfc_is_v3_2b()) {
+		host->devtype_data = &imx53_nand_devtype_data;
+	} else
+		BUG();
+
+	return 0;
+}
+
+static int __devinit mxcnd_probe(struct platform_device *pdev)
 {
 	struct nand_chip *this;
 	struct mtd_info *mtd;
@@ -1282,22 +1493,10 @@ static struct platform_driver mxcnd_driver = {
 	.driver = {
 		   .name = DRIVER_NAME,
 	},
+	.probe = mxcnd_probe,
 	.remove = __devexit_p(mxcnd_remove),
 };
-
-static int __init mxc_nd_init(void)
-{
-	return platform_driver_probe(&mxcnd_driver, mxcnd_probe);
-}
-
-static void __exit mxc_nd_cleanup(void)
-{
-	/* Unregister the device structure */
-	platform_driver_unregister(&mxcnd_driver);
-}
-
-module_init(mxc_nd_init);
-module_exit(mxc_nd_cleanup);
+module_platform_driver(mxcnd_driver);
 
 MODULE_AUTHOR("Freescale Semiconductor, Inc.");
 MODULE_DESCRIPTION("MXC NAND MTD driver");
