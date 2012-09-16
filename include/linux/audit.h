@@ -414,13 +414,24 @@ struct audit_field {
 	void				*lsm_rule;
 };
 
-#define AUDITSC_INVALID 0
-#define AUDITSC_SUCCESS 1
-#define AUDITSC_FAILURE 2
-#define AUDITSC_RESULT(x) ( ((long)(x))<0?AUDITSC_FAILURE:AUDITSC_SUCCESS )
 extern int __init audit_register_class(int class, unsigned *list);
 extern int audit_classify_syscall(int abi, unsigned syscall);
 extern int audit_classify_arch(int arch);
+
+/* audit_names->type values */
+#define AUDIT_TYPE_UNKNOWN      0       /* we don't know yet */
+#define AUDIT_TYPE_NORMAL       1       /* a "normal" audit record */
+#define AUDIT_TYPE_PARENT       2       /* a parent audit record */
+#define AUDIT_TYPE_CHILD_DELETE 3       /* a child being deleted */
+#define AUDIT_TYPE_CHILD_CREATE 4       /* a child being created */
+
+/* maximized args number that audit_socketcall can process */
+#define AUDITSC_ARGS            6
+
+struct filename;
+
+extern void audit_log_session_info(struct audit_buffer *ab);
+
 #ifdef CONFIG_AUDITSYSCALL
 /* These are defined in auditsc.c */
 				/* Public API */
@@ -575,7 +586,10 @@ extern int audit_signals;
 #define auditsc_get_stamp(c,t,s) (0)
 #define audit_get_loginuid(t) (INVALID_UID)
 #define audit_get_sessionid(t) (-1)
-#define audit_log_task_context(b) do { ; } while (0)
+static inline int audit_log_task_context(struct audit_buffer *ab)
+{
+        return 0;
+}
 #define audit_ipc_obj(i) ((void)0)
 #define audit_ipc_set_perm(q,u,g,m) ((void)0)
 #define audit_bprm(p) ({ 0; })
@@ -633,8 +647,7 @@ extern int		    audit_update_lsm_rules(void);
 extern int audit_filter_user(struct netlink_skb_parms *cb);
 extern int audit_filter_type(int type);
 extern int  audit_receive_filter(int type, int pid, int seq,
-				void *data, size_t datasz, kuid_t loginuid,
-				u32 sessionid, u32 sid);
+				void *data, size_t datasz);
 extern int audit_enabled;
 #else
 #define audit_log(c,g,t,f,...) do { ; } while (0)
