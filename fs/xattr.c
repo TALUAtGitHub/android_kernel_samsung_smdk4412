@@ -260,9 +260,10 @@ static long
 setxattr(struct dentry *d, const char __user *name, const void __user *value,
 	 size_t size, int flags)
 {
-	int error;
-	void *kvalue = NULL;
-	char kname[XATTR_NAME_MAX + 1];
+        int error;
+        void *kvalue = NULL;
+        void *vvalue = NULL;    /* If non-NULL, we used vmalloc() */
+        char kname[XATTR_NAME_MAX + 1];
 
 	if (flags & ~(XATTR_CREATE|XATTR_REPLACE))
 		return -EINVAL;
@@ -292,9 +293,13 @@ setxattr(struct dentry *d, const char __user *name, const void __user *value,
 			posix_acl_fix_xattr_from_user(kvalue, size);
 	}
 
-	error = vfs_setxattr(d, kname, kvalue, size, flags);
-	kfree(kvalue);
-	return error;
+        error = vfs_setxattr(d, kname, kvalue, size, flags);
+out:
+        if (vvalue)
+                vfree(vvalue);
+        else
+                kfree(kvalue);
+        return error;
 }
 
 SYSCALL_DEFINE5(setxattr, const char __user *, pathname,

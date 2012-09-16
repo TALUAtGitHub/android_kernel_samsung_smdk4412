@@ -261,31 +261,22 @@ void audit_log_lost(const char *message)
 }
 
 static int audit_log_config_change(char *function_name, int new, int old,
-				   kuid_t loginuid, u32 sessionid, u32 sid,
-				   int allow_changes)
+                                   int allow_changes)
 {
-	struct audit_buffer *ab;
-	int rc = 0;
+        struct audit_buffer *ab;
+        int rc = 0;
 
-	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
-	audit_log_format(ab, "%s=%d old=%d auid=%u ses=%u", function_name, new,
-			 old, from_kuid(&init_user_ns, loginuid), sessionid);
-	if (sid) {
-		char *ctx = NULL;
-		u32 len;
-
-		rc = security_secid_to_secctx(sid, &ctx, &len);
-		if (rc) {
-			audit_log_format(ab, " sid=%u", sid);
-			allow_changes = 0; /* Something weird, deny request */
-		} else {
-			audit_log_format(ab, " subj=%s", ctx);
-			security_release_secctx(ctx, len);
-		}
-	}
-	audit_log_format(ab, " res=%d", allow_changes);
-	audit_log_end(ab);
-	return rc;
+        ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
+        if (unlikely(!ab))
+                return rc;
+        audit_log_format(ab, "%s=%d old=%d", function_name, new, old);
+        audit_log_session_info(ab);
+        rc = audit_log_task_context(ab);
+        if (rc)
+                allow_changes = 0; /* Something weird, deny request */
+        audit_log_format(ab, " res=%d", allow_changes);
+        audit_log_end(ab);
+        return rc;
 }
 
 static int audit_do_config_change(char *function_name, int *to_change,
@@ -301,8 +292,7 @@ static int audit_do_config_change(char *function_name, int *to_change,
 		allow_changes = 1;
 
 	if (audit_enabled != AUDIT_OFF) {
-		rc = audit_log_config_change(function_name, new, old, loginuid,
-					     sessionid, sid, allow_changes);
+                rc = audit_log_config_change(function_name, new, old, allow_changes);
 		if (rc)
 			allow_changes = 0;
 	}
@@ -614,34 +604,24 @@ static int audit_netlink_ok(struct sk_buff *skb, u16 msg_type)
 	return err;
 }
 
-static int audit_log_common_recv_msg(struct audit_buffer **ab, u16 msg_type,
-				     kuid_t auid, u32 ses, u32 sid)
+static int audit_log_common_recv_msg(struct audit_buffer **ab, u16 msg_type)
 {
-	int rc = 0;
-	char *ctx = NULL;
-	u32 len;
+        int rc = 0;
+        uid_t uid = from_kuid(&init_user_ns, current_uid());
 
-	if (!audit_enabled) {
-		*ab = NULL;
-		return rc;
-	}
+        if (!audit_enabled) {
+                *ab = NULL;
+                return rc;
+        }
 
-	*ab = audit_log_start(NULL, GFP_KERNEL, msg_type);
-	audit_log_format(*ab, "pid=%d uid=%u auid=%u ses=%u",
-			 task_tgid_vnr(current),
-			 from_kuid(&init_user_ns, current_uid()),
-			 from_kuid(&init_user_ns, auid), ses);
-	if (sid) {
-		rc = security_secid_to_secctx(sid, &ctx, &len);
-		if (rc)
-			audit_log_format(*ab, " ssid=%u", sid);
-		else {
-			audit_log_format(*ab, " subj=%s", ctx);
-			security_release_secctx(ctx, len);
-		}
-	}
+        *ab = audit_log_start(NULL, GFP_KERNEL, msg_type);
+        if (unlikely(!*ab))
+                return rc;
+        audit_log_format(*ab, "pid=%d uid=%u", task_tgid_vnr(current), uid);
+        audit_log_session_info(*ab);
+        audit_log_task_context(*ab);
 
-	return rc;
+        return rc;
 }
 
 static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
@@ -712,10 +692,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
 			int new_pid = status_get->pid;
 
 			if (audit_enabled != AUDIT_OFF)
-				audit_log_config_change("audit_pid", new_pid,
-							audit_pid, loginuid,
-							sessionid, sid, 1);
-
+                                audit_log_config_change("audit_pid", new_pid, audit_pid, 1);
 			audit_pid = new_pid;
 			audit_nlk_pid = NETLINK_CB(skb).pid;
 		}
@@ -744,9 +721,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
 				if (err)
 					break;
 			}
-			audit_log_common_recv_msg(&ab, msg_type, pid, uid,
-						  loginuid, sessionid, sid);
-
+			audit_log_common_recv_msg(&ab, msg_type);
 			if (msg_type != AUDIT_USER_TTY)
 				audit_log_format(ab, " msg='%.1024s'",
 						 (char *)data);
@@ -764,33 +739,12 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
 			audit_log_end(ab);
 		}
 		break;
-	case AUDIT_ADD:
-	case AUDIT_DEL:
-		if (nlmsg_len(nlh) < sizeof(struct audit_rule))
-			return -EINVAL;
-		if (audit_enabled == AUDIT_LOCKED) {
-			audit_log_common_recv_msg(&ab, AUDIT_CONFIG_CHANGE, pid,
-						  uid, loginuid, sessionid, sid);
-
-			audit_log_format(ab, " audit_enabled=%d res=0",
-					 audit_enabled);
-			audit_log_end(ab);
-			return -EPERM;
-		}
-		/* fallthrough */
-	case AUDIT_LIST:
-		err = audit_receive_filter(msg_type, NETLINK_CB(skb).pid,
-					   uid, seq, data, nlmsg_len(nlh),
-					   loginuid, sessionid, sid);
-		break;
 	case AUDIT_ADD_RULE:
 	case AUDIT_DEL_RULE:
 		if (nlmsg_len(nlh) < sizeof(struct audit_rule_data))
 			return -EINVAL;
 		if (audit_enabled == AUDIT_LOCKED) {
-			audit_log_common_recv_msg(&ab, AUDIT_CONFIG_CHANGE, pid,
-						  uid, loginuid, sessionid, sid);
-
+			audit_log_common_recv_msg(&ab, AUDIT_CONFIG_CHANGE);
 			audit_log_format(ab, " audit_enabled=%d res=0",
 					 audit_enabled);
 			audit_log_end(ab);
@@ -799,15 +753,11 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
 		/* fallthrough */
 	case AUDIT_LIST_RULES:
 		err = audit_receive_filter(msg_type, NETLINK_CB(skb).pid,
-					   uid, seq, data, nlmsg_len(nlh),
-					   loginuid, sessionid, sid);
+					   seq, data, nlmsg_len(nlh));
 		break;
 	case AUDIT_TRIM:
 		audit_trim_trees();
-
-		audit_log_common_recv_msg(&ab, AUDIT_CONFIG_CHANGE, pid,
-					  uid, loginuid, sessionid, sid);
-
+		audit_log_common_recv_msg(&ab, AUDIT_CONFIG_CHANGE);
 		audit_log_format(ab, " op=trim res=1");
 		audit_log_end(ab);
 		break;
@@ -837,8 +787,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
 		/* OK, here comes... */
 		err = audit_tag_tree(old, new);
 
-		audit_log_common_recv_msg(&ab, AUDIT_CONFIG_CHANGE, pid,
-					  uid, loginuid, sessionid, sid);
+		audit_log_common_recv_msg(&ab, AUDIT_CONFIG_CHANGE);
 
 		audit_log_format(ab, " op=make_equiv old=");
 		audit_log_untrustedstring(ab, old);
@@ -1435,6 +1384,14 @@ void audit_log_d_path(struct audit_buffer *ab, const char *prefix,
 	} else
 		audit_log_untrustedstring(ab, p);
 	kfree(pathname);
+}
+
+void audit_log_session_info(struct audit_buffer *ab)
+{
+        u32 sessionid = audit_get_sessionid(current);
+        uid_t auid = from_kuid(&init_user_ns, audit_get_loginuid(current));
+
+        audit_log_format(ab, " auid=%u ses=%u\n", auid, sessionid);
 }
 
 void audit_log_key(struct audit_buffer *ab, char *key)
