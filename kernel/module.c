@@ -3047,8 +3047,18 @@ static int load_module(struct load_info *info, const char __user *uargs,
 	 * function to insert in a way safe to concurrent readers.
 	 * The mutex protects against concurrent writers.
 	 */
+again:
 	mutex_lock(&module_mutex);
-	if (find_module(mod->name)) {
+	if ((old = find_module(mod->name)) != NULL) {
+		if (old->state == MODULE_STATE_COMING) {
+			/* Wait in case it fails to load. */
+			mutex_unlock(&module_mutex);
+			err = wait_event_interruptible(module_wq,
+					       finished_loading(mod->name));
+			if (err)
+				goto free_arch_cleanup;
+			goto again;
+		}
 		err = -EEXIST;
 		goto unlock;
 	}
