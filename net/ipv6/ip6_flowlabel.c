@@ -97,6 +97,8 @@ static void fl_free(struct ip6_flowlabel *fl)
 		break;
 	}
 	if (fl) {
+		if (fl->share == IPV6_FL_S_PROCESS)
+			put_pid(fl->owner.pid);
 		release_net(fl->fl_net);
 		kfree(fl->opt);
 	}
