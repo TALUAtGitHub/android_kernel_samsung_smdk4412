@@ -441,64 +441,7 @@ static struct platform_driver at91_rtc_driver = {
 	.resume		= at91_rtc_resume,
 };
 
-/* Chips can have more than one RTT module, and they can be used for more
- * than just RTCs.  So we can't just register as "the" RTT driver.
- *
- * A normal approach in such cases is to create a library to allocate and
- * free the modules.  Here we just use bus_find_device() as like such a
- * library, binding directly ... no runtime "library" footprint is needed.
- */
-static int __init at91_rtc_match(struct device *dev, void *v)
-{
-	struct platform_device *pdev = to_platform_device(dev);
-	int ret;
-
-	/* continue searching if this isn't the RTT we need */
-	if (strcmp("at91_rtt", pdev->name) != 0
-			|| pdev->id != CONFIG_RTC_DRV_AT91SAM9_RTT)
-		goto fail;
-
-	/* else we found it ... but fail unless we can bind to the RTC driver */
-	if (dev->driver) {
-		dev_dbg(dev, "busy, can't use as RTC!\n");
-		goto fail;
-	}
-	dev->driver = &at91_rtc_driver.driver;
-	if (device_attach(dev) == 0) {
-		dev_dbg(dev, "can't attach RTC!\n");
-		goto fail;
-	}
-	ret = at91_rtc_probe(pdev);
-	if (ret == 0)
-		return true;
-
-	dev_dbg(dev, "RTC probe err %d!\n", ret);
-fail:
-	return false;
-}
-
-static int __init at91_rtc_init(void)
-{
-	int status;
-	struct device *rtc;
-
-	status = platform_driver_register(&at91_rtc_driver);
-	if (status)
-		return status;
-	rtc = bus_find_device(&platform_bus_type, NULL,
-			NULL, at91_rtc_match);
-	if (!rtc)
-		platform_driver_unregister(&at91_rtc_driver);
-	return rtc ? 0 : -ENODEV;
-}
-module_init(at91_rtc_init);
-
-static void __exit at91_rtc_exit(void)
-{
-	platform_driver_unregister(&at91_rtc_driver);
-}
-module_exit(at91_rtc_exit);
-
+module_platform_driver(at91_rtc_driver);
 
 MODULE_AUTHOR("Michel Benoit");
 MODULE_DESCRIPTION("RTC driver for Atmel AT91SAM9x");
