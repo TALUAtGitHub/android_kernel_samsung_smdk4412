@@ -643,15 +643,4 @@ static struct platform_driver am35x_driver = {
 MODULE_DESCRIPTION("AM35x MUSB Glue Layer");
 MODULE_AUTHOR("Ajay Kumar Gupta <ajay.gupta@ti.com>");
 MODULE_LICENSE("GPL v2");
-
-static int __init am35x_init(void)
-{
-	return platform_driver_probe(&am35x_driver, am35x_probe);
-}
-subsys_initcall(am35x_init);
-
-static void __exit am35x_exit(void)
-{
-	platform_driver_unregister(&am35x_driver);
-}
-module_exit(am35x_exit);
+module_platform_driver(am35x_driver);
