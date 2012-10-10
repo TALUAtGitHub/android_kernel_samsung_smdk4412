@@ -1266,15 +1266,4 @@ static struct platform_driver tusb_driver = {
 MODULE_DESCRIPTION("TUSB6010 MUSB Glue Layer");
 MODULE_AUTHOR("Felipe Balbi <balbi@ti.com>");
 MODULE_LICENSE("GPL v2");
-
-static int __init tusb_init(void)
-{
-	return platform_driver_probe(&tusb_driver, tusb_probe);
-}
-subsys_initcall(tusb_init);
-
-static void __exit tusb_exit(void)
-{
-	platform_driver_unregister(&tusb_driver);
-}
-module_exit(tusb_exit);
+module_platform_driver(tusb_driver);
