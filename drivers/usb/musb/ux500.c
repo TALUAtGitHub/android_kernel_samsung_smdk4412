@@ -204,15 +204,4 @@ static struct platform_driver ux500_driver = {
 MODULE_DESCRIPTION("UX500 MUSB Glue Layer");
 MODULE_AUTHOR("Mian Yousaf Kaukab <mian.yousaf.kaukab@stericsson.com>");
 MODULE_LICENSE("GPL v2");
-
-static int __init ux500_init(void)
-{
-	return platform_driver_probe(&ux500_driver, ux500_probe);
-}
-subsys_initcall(ux500_init);
-
-static void __exit ux500_exit(void)
-{
-	platform_driver_unregister(&ux500_driver);
-}
-module_exit(ux500_exit);
+module_platform_driver(ux500_driver);
