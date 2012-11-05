@@ -201,7 +201,7 @@ static inline int sigfindinword(unsigned long word)
 }
 
 struct pt_regs;
-extern void ptrace_signal_deliver(struct pt_regs *regs, void *cookie);
+extern void ptrace_signal_deliver(void);
 #define ptrace_signal_deliver ptrace_signal_deliver
 #else
 
