@@ -202,11 +202,10 @@ static inline int sigfindinword(unsigned long word)
 
 struct pt_regs;
 extern void ptrace_signal_deliver(struct pt_regs *regs, void *cookie);
-
+#define ptrace_signal_deliver ptrace_signal_deliver
 #else
 
 #undef __HAVE_ARCH_SIG_BITOPS
-#define ptrace_signal_deliver(regs, cookie) do { } while (0)
 
 #endif /* __uClinux__ */
 #endif /* __KERNEL__ */

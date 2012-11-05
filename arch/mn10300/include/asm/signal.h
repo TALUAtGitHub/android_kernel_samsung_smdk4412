@@ -160,13 +160,4 @@ typedef struct sigaltstack {
 	size_t		ss_size;
 } stack_t;
 
-#ifdef __KERNEL__
-#include <asm/sigcontext.h>
-
-
-struct pt_regs;
-#define ptrace_signal_deliver(regs, cookie) do { } while (0)
-
-#endif /* __KERNEL__ */
-
 #endif /* _ASM_SIGNAL_H */

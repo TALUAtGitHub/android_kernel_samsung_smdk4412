@@ -137,8 +137,6 @@ struct k_sigaction {
         struct sigaction sa;
 };
 
-#define ptrace_signal_deliver(regs, cookie) do { } while (0)
-
 #else
 /* Here we must cater to libcs that poke about in kernel headers.  */
 
