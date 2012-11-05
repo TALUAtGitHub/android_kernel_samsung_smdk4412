@@ -132,8 +132,6 @@ typedef struct sigaltstack {
 #include <asm/sigcontext.h>
 #include <asm/siginfo.h>
 
-#define ptrace_signal_deliver(regs, cookie) do { } while (0)
-
 #endif /* __KERNEL__ */
 
 #endif /* _ASM_SIGNAL_H */
