@@ -121,11 +121,6 @@ typedef struct sigaltstack {
 	size_t ss_size;
 } stack_t;
 
-#ifdef __KERNEL__
-struct pt_regs;
-#define ptrace_signal_deliver(regs, cookie) do { } while (0)
-#endif /* __KERNEL__ */
-
 #ifndef __powerpc64__
 /*
  * These are parameters to dbg_sigreturn syscall.  They enable or
