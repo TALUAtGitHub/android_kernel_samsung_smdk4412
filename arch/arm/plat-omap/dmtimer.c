@@ -795,3 +795,53 @@ int __init omap_dm_timer_init(void)
 
 	return 0;
 }
+
+/**
+ * omap_dm_timer_remove - cleanup a registered timer device
+ * @pdev:	pointer to current timer platform device
+ *
+ * Called by driver framework whenever a timer device is unregistered.
+ * In addition to freeing platform resources it also deletes the timer
+ * entry from the local list.
+ */
+static int __devexit omap_dm_timer_remove(struct platform_device *pdev)
+{
+	struct omap_dm_timer *timer;
+	unsigned long flags;
+	int ret = -EINVAL;
+
+	spin_lock_irqsave(&dm_timer_lock, flags);
+	list_for_each_entry(timer, &omap_timer_list, node)
+		if (!strcmp(dev_name(&timer->pdev->dev),
+			    dev_name(&pdev->dev))) {
+			list_del(&timer->node);
+			ret = 0;
+			break;
+		}
+	spin_unlock_irqrestore(&dm_timer_lock, flags);
+
+	return ret;
+}
+
+static const struct of_device_id omap_timer_match[] = {
+	{ .compatible = "ti,omap2-timer", },
+	{},
+};
+MODULE_DEVICE_TABLE(of, omap_timer_match);
+
+static struct platform_driver omap_dm_timer_driver = {
+	.probe  = omap_dm_timer_probe,
+	.remove = __devexit_p(omap_dm_timer_remove),
+	.driver = {
+		.name   = "omap_timer",
+		.of_match_table = of_match_ptr(omap_timer_match),
+	},
+};
+
+early_platform_init("earlytimer", &omap_dm_timer_driver);
+module_platform_driver(omap_dm_timer_driver);
+
+MODULE_DESCRIPTION("OMAP Dual-Mode Timer Driver");
+MODULE_LICENSE("GPL");
+MODULE_ALIAS("platform:" DRIVER_NAME);
+MODULE_AUTHOR("Texas Instruments Inc");
