@@ -2991,12 +2991,72 @@ static int may_init_module(void)
 	return 0;
 }
 
+/*
+ * We try to place it in the list now to make sure it's unique before
+ * we dedicate too many resources.  In particular, temporary percpu
+ * memory exhaustion.
+ */
+static int add_unformed_module(struct module *mod)
+{
+	int err;
+	struct module *old;
+
+	mod->state = MODULE_STATE_UNFORMED;
+
+again:
+	mutex_lock(&module_mutex);
+	if ((old = find_module_all(mod->name, true)) != NULL) {
+		if (old->state == MODULE_STATE_COMING
+		    || old->state == MODULE_STATE_UNFORMED) {
+			/* Wait in case it fails to load. */
+			mutex_unlock(&module_mutex);
+			err = wait_event_interruptible(module_wq,
+					       finished_loading(mod->name));
+			if (err)
+				goto out_unlocked;
+			goto again;
+		}
+		err = -EEXIST;
+		goto out;
+	}
+	list_add_rcu(&mod->list, &modules);
+	err = 0;
+
+out:
+	mutex_unlock(&module_mutex);
+out_unlocked:
+	return err;
+}
+
+static int complete_formation(struct module *mod, struct load_info *info)
+{
+	int err;
+
+	mutex_lock(&module_mutex);
+
+	/* Find duplicate symbols (must be called under lock). */
+	err = verify_export_symbols(mod);
+	if (err < 0)
+		goto out;
+
+	/* This relies on module_mutex for list integrity. */
+	module_bug_finalize(info->hdr, info->sechdrs, mod);
+
+	/* Mark state as coming so strong_try_module_get() ignores us,
+	 * but kallsyms etc. can see us. */
+	mod->state = MODULE_STATE_COMING;
+
+out:
+	mutex_unlock(&module_mutex);
+	return err;
+}
+
 /* Allocate and load the module: note that size of section 0 is always
    zero, and we rely on this for optional sections. */
 static int load_module(struct load_info *info, const char __user *uargs,
 		       int flags)
 {
-	struct module *mod, *old;
+	struct module *mod;
 	long err;
 
 	err = module_sig_check(info);
@@ -3014,31 +3074,10 @@ static int load_module(struct load_info *info, const char __user *uargs,
 		goto free_copy;
 	}
 
-	/*
-	 * We try to place it in the list now to make sure it's unique
-	 * before we dedicate too many resources.  In particular,
-	 * temporary percpu memory exhaustion.
-	 */
-	mod->state = MODULE_STATE_UNFORMED;
-again:
-	mutex_lock(&module_mutex);
-	if ((old = find_module_all(mod->name, true)) != NULL) {
-		if (old->state == MODULE_STATE_COMING
-		    || old->state == MODULE_STATE_UNFORMED) {
-			/* Wait in case it fails to load. */
-			mutex_unlock(&module_mutex);
-			err = wait_event_interruptible(module_wq,
-					       finished_loading(mod->name));
-			if (err)
-				goto free_module;
-			goto again;
-		}
-		err = -EEXIST;
-		mutex_unlock(&module_mutex);
+	/* Reserve our place in the list. */
+	err = add_unformed_module(mod);
+	if (err)
 		goto free_module;
-	}
-	list_add_rcu(&mod->list, &modules);
-	mutex_unlock(&module_mutex);
 
 #ifdef CONFIG_MODULE_SIG
 	mod->sig_ok = info->sig_ok;
@@ -3086,20 +3125,10 @@ again:
 
 	dynamic_debug_setup(info->debug, info->num_debug);
 
-	mutex_lock(&module_mutex);
-	/* Find duplicate symbols (must be called under lock). */
-	err = verify_export_symbols(mod);
-	if (err < 0)
+	/* Finally it's fully formed, ready to start executing. */
+	err = complete_formation(mod, info);
+	if (err)
 		goto ddebug_cleanup;
-
-	/* This relies on module_mutex for list integrity. */
-	module_bug_finalize(info->hdr, info->sechdrs, mod);
-
-	/* Mark state as coming so strong_try_module_get() ignores us,
-	 * but kallsyms etc. can see us. */
-	mod->state = MODULE_STATE_COMING;
-
-	mutex_unlock(&module_mutex);
 
 	/* Module is ready to execute: parsing args may do that. */
 	err = parse_args(mod->name, mod->args, mod->kp, mod->num_kp, NULL);
