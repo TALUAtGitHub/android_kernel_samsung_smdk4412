@@ -254,11 +254,12 @@ p9pdu_vreadf(struct p9_fcall *pdu, int proto_version, const char *fmt,
 				    va_arg(ap, struct p9_wstat *);
 
 				memset(stbuf, 0, sizeof(struct p9_wstat));
-				stbuf->n_uid = stbuf->n_gid = stbuf->n_muid =
-									-1;
+				stbuf->n_uid = stbuf->n_muid = INVALID_UID;
+				stbuf->n_gid = INVALID_GID;
+
 				errcode =
 				    p9pdu_readf(pdu, proto_version,
-						"wwdQdddqssss?sddd",
+						"wwdQdddqssss?sugu",
 						&stbuf->size, &stbuf->type,
 						&stbuf->dev, &stbuf->qid,
 						&stbuf->mode, &stbuf->atime,
@@ -371,7 +372,7 @@ p9pdu_vreadf(struct p9_fcall *pdu, int proto_version, const char *fmt,
 				memset(stbuf, 0, sizeof(struct p9_stat_dotl));
 				errcode =
 				    p9pdu_readf(pdu, proto_version,
-					"qQdddqqqqqqqqqqqqqqq",
+					"qQdugqqqqqqqqqqqqqqq",
 					&stbuf->st_result_mask,
 					&stbuf->qid,
 					&stbuf->st_mode,
@@ -481,7 +482,7 @@ p9pdu_vwritef(struct p9_fcall *pdu, int proto_version, const char *fmt,
 				    va_arg(ap, const struct p9_wstat *);
 				errcode =
 				    p9pdu_writef(pdu, proto_version,
-						 "wwdQdddqssss?sddd",
+						 "wwdQdddqssss?sugu",
 						 stbuf->size, stbuf->type,
 						 stbuf->dev, &stbuf->qid,
 						 stbuf->mode, stbuf->atime,
@@ -579,7 +580,7 @@ p9pdu_vwritef(struct p9_fcall *pdu, int proto_version, const char *fmt,
 							struct p9_iattr_dotl *);
 
 				errcode = p9pdu_writef(pdu, proto_version,
-							"ddddqqqqq",
+							"ddugqqqqq",
 							p9attr->valid,
 							p9attr->mode,
 							p9attr->uid,
