@@ -840,15 +840,11 @@ config UIDGID_CONVERTED
 	bool
 	default y
 
-	# Networking
-	depends on NET_9P = n
-
 	# Filesystems
 	depends on USB_DEVICEFS = n
 	depends on USB_GADGETFS = n
 	depends on USB_FUNCTIONFS = n
 
-	depends on 9P_FS = n
 	depends on AFS_FS = n
 	depends on CIFS = n
 	depends on CODA_FS = n
