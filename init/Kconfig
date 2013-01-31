@@ -846,7 +846,6 @@ config UIDGID_CONVERTED
 	depends on USB_FUNCTIONFS = n
 
 	depends on CIFS = n
-	depends on CODA_FS = n
 	depends on GFS2_FS = n
 	depends on NCP_FS = n
 	depends on NFSD = n
