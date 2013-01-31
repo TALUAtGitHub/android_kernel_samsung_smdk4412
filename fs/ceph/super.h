@@ -135,9 +135,9 @@ struct ceph_cap_snap {
 	int issued, dirty;
 	struct ceph_snap_context *context;
 
-	mode_t mode;
-	uid_t uid;
-	gid_t gid;
+	umode_t mode;
+	kuid_t uid;
+	kgid_t gid;
 
 	struct ceph_buffer *xattr_blob;
 	u64 xattr_version;
