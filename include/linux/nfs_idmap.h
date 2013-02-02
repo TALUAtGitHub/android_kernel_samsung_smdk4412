@@ -39,7 +39,6 @@
 
 #include <linux/types.h>
 #include <linux/uidgid.h>
-#include <linux/nfs_idmap.h>
 
 /* XXX from bits/utmp.h  */
 #define IDMAP_NAMESZ  128
