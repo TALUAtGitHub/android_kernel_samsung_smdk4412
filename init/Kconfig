@@ -849,7 +849,6 @@ config UIDGID_CONVERTED
 	depends on GFS2_FS = n
 	depends on NCP_FS = n
 	depends on NFSD = n
-	depends on NFS_FS = n
 	depends on XFS_FS = n
 
 config UIDGID_STRICT_TYPE_CHECKS
