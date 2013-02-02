@@ -1153,11 +1153,47 @@ same_clid(clientid_t *cl1, clientid_t *cl2)
 	return (cl1->cl_boot == cl2->cl_boot) && (cl1->cl_id == cl2->cl_id);
 }
 
-/* XXX what about NGROUP */
-static int
+static bool groups_equal(struct group_info *g1, struct group_info *g2)
+{
+	int i;
+
+	if (g1->ngroups != g2->ngroups)
+		return false;
+	for (i=0; i<g1->ngroups; i++)
+		if (!gid_eq(GROUP_AT(g1, i), GROUP_AT(g2, i)))
+			return false;
+	return true;
+}
+
+/*
+ * RFC 3530 language requires clid_inuse be returned when the
+ * "principal" associated with a requests differs from that previously
+ * used.  We use uid, gid's, and gss principal string as our best
+ * approximation.  We also don't want to allow non-gss use of a client
+ * established using gss: in theory cr_principal should catch that
+ * change, but in practice cr_principal can be null even in the gss case
+ * since gssd doesn't always pass down a principal string.
+ */
+static bool is_gss_cred(struct svc_cred *cr)
+{
+	/* Is cr_flavor one of the gss "pseudoflavors"?: */
+	return (cr->cr_flavor > RPC_AUTH_MAXFLAVOR);
+}
+
+
+static bool
 same_creds(struct svc_cred *cr1, struct svc_cred *cr2)
 {
-	return cr1->cr_uid == cr2->cr_uid;
+	if ((is_gss_cred(cr1) != is_gss_cred(cr2))
+		|| (!uid_eq(cr1->cr_uid, cr2->cr_uid))
+		|| (!gid_eq(cr1->cr_gid, cr2->cr_gid))
+		|| !groups_equal(cr1->cr_group_info, cr2->cr_group_info))
+		return false;
+	if (cr1->cr_principal == cr2->cr_principal)
+		return true;
+	if (!cr1->cr_principal || !cr2->cr_principal)
+		return false;
+	return 0 == strcmp(cr1->cr_principal, cr2->cr_principal);
 }
 
 static void gen_clid(struct nfs4_client *clp)
