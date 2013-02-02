@@ -150,6 +150,12 @@ struct nfsd4_channel_attrs {
 	u32		rdma_attrs;
 };
 
+struct nfsd4_cb_sec {
+	u32	flavor; /* (u32)(-1) used to mean "no valid flavor" */
+	kuid_t	uid;
+	kgid_t	gid;
+};
+
 struct nfsd4_create_session {
 	clientid_t			clientid;
 	struct nfs4_sessionid		sessionid;
