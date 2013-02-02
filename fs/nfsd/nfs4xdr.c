@@ -416,6 +416,93 @@ nfsd4_decode_access(struct nfsd4_compoundargs *argp, struct nfsd4_access *access
 	DECODE_TAIL;
 }
 
+static __be32 nfsd4_decode_cb_sec(struct nfsd4_compoundargs *argp, struct nfsd4_cb_sec *cbs)
+{
+	DECODE_HEAD;
+	u32 dummy, uid, gid;
+	char *machine_name;
+	int i;
+	int nr_secflavs;
+
+	/* callback_sec_params4 */
+	READ_BUF(4);
+	READ32(nr_secflavs);
+	cbs->flavor = (u32)(-1);
+	for (i = 0; i < nr_secflavs; ++i) {
+		READ_BUF(4);
+		READ32(dummy);
+		switch (dummy) {
+		case RPC_AUTH_NULL:
+			/* Nothing to read */
+			if (cbs->flavor == (u32)(-1))
+				cbs->flavor = RPC_AUTH_NULL;
+			break;
+		case RPC_AUTH_UNIX:
+			READ_BUF(8);
+			/* stamp */
+			READ32(dummy);
+
+			/* machine name */
+			READ32(dummy);
+			READ_BUF(dummy);
+			SAVEMEM(machine_name, dummy);
+
+			/* uid, gid */
+			READ_BUF(8);
+			READ32(uid);
+			READ32(gid);
+
+			/* more gids */
+			READ_BUF(4);
+			READ32(dummy);
+			READ_BUF(dummy * 4);
+			if (cbs->flavor == (u32)(-1)) {
+				kuid_t kuid = make_kuid(&init_user_ns, uid);
+				kgid_t kgid = make_kgid(&init_user_ns, gid);
+				if (uid_valid(kuid) && gid_valid(kgid)) {
+					cbs->uid = kuid;
+					cbs->gid = kgid;
+					cbs->flavor = RPC_AUTH_UNIX;
+				} else {
+					dprintk("RPC_AUTH_UNIX with invalid"
+						"uid or gid ignoring!\n");
+				}
+			}
+			break;
+		case RPC_AUTH_GSS:
+			dprintk("RPC_AUTH_GSS callback secflavor "
+				"not supported!\n");
+			READ_BUF(8);
+			/* gcbp_service */
+			READ32(dummy);
+			/* gcbp_handle_from_server */
+			READ32(dummy);
+			READ_BUF(dummy);
+			p += XDR_QUADLEN(dummy);
+			/* gcbp_handle_from_client */
+			READ_BUF(4);
+			READ32(dummy);
+			READ_BUF(dummy);
+			break;
+		default:
+			dprintk("Illegal callback secflavor\n");
+			return nfserr_inval;
+		}
+	}
+	DECODE_TAIL;
+}
+
+static __be32 nfsd4_decode_backchannel_ctl(struct nfsd4_compoundargs *argp, struct nfsd4_backchannel_ctl *bc)
+{
+	DECODE_HEAD;
+
+	READ_BUF(4);
+	READ32(bc->bc_cb_program);
+	nfsd4_decode_cb_sec(argp, &bc->bc_cb_sec);
+
+	DECODE_TAIL;
+}
+
 static __be32 nfsd4_decode_bind_conn_to_session(struct nfsd4_compoundargs *argp, struct nfsd4_bind_conn_to_session *bcts)
 {
 	DECODE_HEAD;
