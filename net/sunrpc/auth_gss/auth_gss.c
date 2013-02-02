@@ -298,7 +298,7 @@ __gss_find_upcall(struct rpc_pipe *pipe, kuid_t uid)
 {
 	struct gss_upcall_msg *pos;
 	list_for_each_entry(pos, &pipe->in_downcall, list) {
-		if (pos->uid != uid)
+		if (!uid_eq(pos->uid, uid))
 			continue;
 		atomic_inc(&pos->count);
 		dprintk("RPC:       gss_find_upcall found msg %p\n", pos);
@@ -1106,7 +1106,7 @@ out:
 	}
 	if (gss_cred->gc_principal != NULL)
 		return 0;
-	return rc->cr_uid == acred->uid;
+	return uid_eq(rc->cr_uid, acred->uid);
 }
 
 /*
