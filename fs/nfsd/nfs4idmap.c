@@ -63,7 +63,7 @@ MODULE_PARM_DESC(nfs4_disable_idmapping,
 struct ent {
 	struct cache_head h;
 	int               type;		       /* User / Group */
-	uid_t             id;
+	u32               id;
 	char              name[IDMAP_NAMESZ];
 	char              authname[IDMAP_NAMESZ];
 };
@@ -525,7 +525,7 @@ rqst_authname(struct svc_rqst *rqstp)
 
 static __be32
 idmap_name_to_id(struct svc_rqst *rqstp, int type, const char *name, u32 namelen,
-		uid_t *id)
+		u32 *id)
 {
 	struct ent *item, key = {
 		.type = type,
@@ -548,7 +548,7 @@ idmap_name_to_id(struct svc_rqst *rqstp, int type, const char *name, u32 namelen
 }
 
 static int
-idmap_id_to_name(struct svc_rqst *rqstp, int type, uid_t id, char *name)
+idmap_id_to_name(struct svc_rqst *rqstp, int type, u32 id, char *name)
 {
 	struct ent *item, key = {
 		.id = id,
@@ -570,7 +570,7 @@ idmap_id_to_name(struct svc_rqst *rqstp, int type, uid_t id, char *name)
 }
 
 static bool
-numeric_name_to_id(struct svc_rqst *rqstp, int type, const char *name, u32 namelen, uid_t *id)
+numeric_name_to_id(struct svc_rqst *rqstp, int type, const char *name, u32 namelen, u32 *id)
 {
 	int ret;
 	char buf[11];
@@ -586,7 +586,7 @@ numeric_name_to_id(struct svc_rqst *rqstp, int type, const char *name, u32 namel
 }
 
 static __be32
-do_name_to_id(struct svc_rqst *rqstp, int type, const char *name, u32 namelen, uid_t *id)
+do_name_to_id(struct svc_rqst *rqstp, int type, const char *name, u32 namelen, u32 *id)
 {
 	if (nfs4_disable_idmapping && rqstp->rq_flavor < RPC_AUTH_GSS)
 		if (numeric_name_to_id(rqstp, type, name, namelen, id))
@@ -599,7 +599,7 @@ do_name_to_id(struct svc_rqst *rqstp, int type, const char *name, u32 namelen, u
 }
 
 static int
-do_id_to_name(struct svc_rqst *rqstp, int type, uid_t id, char *name)
+do_id_to_name(struct svc_rqst *rqstp, int type, u32 id, char *name)
 {
 	if (nfs4_disable_idmapping && rqstp->rq_flavor < RPC_AUTH_GSS)
 		return sprintf(name, "%u", id);
