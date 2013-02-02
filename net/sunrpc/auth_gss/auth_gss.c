@@ -298,7 +298,7 @@ __gss_find_upcall(struct rpc_inode *rpci, kuid_t uid)
 {
 	struct gss_upcall_msg *pos;
 	list_for_each_entry(pos, &rpci->in_downcall, list) {
-		if (pos->uid != uid)
+		if (!uid_eq(pos->uid, uid))
 			continue;
 		atomic_inc(&pos->count);
 		dprintk("RPC:       gss_find_upcall found msg %p\n", pos);
@@ -1052,7 +1052,7 @@ gss_match(struct auth_cred *acred, struct rpc_cred *rc, int flags)
 out:
 	if (acred->machine_cred != gss_cred->gc_machine_cred)
 		return 0;
-	return rc->cr_uid == acred->uid;
+	return uid_eq(rc->cr_uid, acred->uid);
 }
 
 /*
