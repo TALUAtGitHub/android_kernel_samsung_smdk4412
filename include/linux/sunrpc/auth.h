@@ -27,6 +27,7 @@ struct auth_cred {
 	kuid_t	uid;
 	kgid_t	gid;
 	struct group_info *group_info;
+	const char *principal;
 	unsigned char machine_cred : 1;
 };
 
