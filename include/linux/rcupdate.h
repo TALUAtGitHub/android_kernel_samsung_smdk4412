@@ -428,7 +428,7 @@ extern int rcu_my_thread_group_empty(void);
 #define __rcu_assign_pointer(p, v, space) \
 	({ \
 		smp_wmb(); \
-		(p) = (typeof(*v) __force space *)(v); \
+		ACCESS_ONCE(p) = (typeof(*(v)) __force space *)(v); \
 	})
 
 
