@@ -87,6 +87,8 @@
 /* Instruct lower device to use last 4-bytes of skb data as FCS */
 #define SO_NOFCS		43
 
+#define SO_MAX_PACING_RATE	44
+
 #ifdef __KERNEL__
 
 /** sock_type - Socket types
