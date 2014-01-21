@@ -112,7 +112,6 @@ struct vpe {
 	unsigned long len;
 	char *pbuffer;
 	unsigned long plen;
-	unsigned int uid, gid;
 	char cwd[VPE_PATH_MAX];
 
 	unsigned long __start;
@@ -1099,17 +1098,6 @@ static int vpe_open(struct inode *inode, struct file *filp)
 	v->load_addr = NULL;
 	v->len = 0;
 
-	v->uid = filp->f_cred->fsuid;
-	v->gid = filp->f_cred->fsgid;
-
-#ifdef CONFIG_MIPS_APSP_KSPD
-	/* get kspd to tell us when a syscall_exit happens */
-	if (!kspd_events_reqd) {
-		kspd_notify(&kspd_events);
-		kspd_events_reqd++;
-	}
-#endif
-
 	v->cwd[0] = 0;
 	ret = getcwd(v->cwd, VPE_PATH_MAX);
 	if (ret < 0)
@@ -1292,30 +1280,6 @@ void *vpe_get_shared(int index)
 }
 
 EXPORT_SYMBOL(vpe_get_shared);
-
-int vpe_getuid(int index)
-{
-	struct vpe *v;
-
-	if ((v = get_vpe(index)) == NULL)
-		return -1;
-
-	return v->uid;
-}
-
-EXPORT_SYMBOL(vpe_getuid);
-
-int vpe_getgid(int index)
-{
-	struct vpe *v;
-
-	if ((v = get_vpe(index)) == NULL)
-		return -1;
-
-	return v->gid;
-}
-
-EXPORT_SYMBOL(vpe_getgid);
 
 int vpe_notify(int index, struct vpe_notifications *notify)
 {
