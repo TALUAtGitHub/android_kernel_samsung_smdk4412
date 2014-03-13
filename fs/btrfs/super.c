@@ -954,6 +954,8 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
 	struct btrfs_root *root = fs_info->tree_root;
 	int ret;
 
+	sync_filesystem(sb);
+
 	ret = btrfs_parse_options(root, data);
 	if (ret)
 		return -EINVAL;
