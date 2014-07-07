@@ -607,7 +607,7 @@ static int f2fs_remount(struct super_block *sb, int *flags, char *data)
 	 * Previous and new state of filesystem is RO,
 	 * so no point in checking GC conditions.
 	 */
-	if ((sb->s_flags & MS_RDONLY) && (*flags & MS_RDONLY))
+	if (f2fs_readonly(sb) && (*flags & MS_RDONLY))
 		goto skip;
 
 	/*
@@ -1051,7 +1051,7 @@ static int f2fs_fill_super(struct super_block *sb, void *data, int silent)
 	 * If filesystem is not mounted as read-only then
 	 * do start the gc_thread.
 	 */
-	if (!(sb->s_flags & MS_RDONLY)) {
+	if (!f2fs_readonly(sb)) {
 		/* After POR, we can run background GC thread.*/
 		err = start_gc_thread(sbi);
 		if (err)
