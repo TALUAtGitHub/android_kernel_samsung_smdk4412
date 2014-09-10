@@ -141,6 +141,7 @@ int f2fs_sync_file(struct file *file, int datasync)
 	struct inode *inode = file->f_mapping->host;
 	struct f2fs_inode_info *fi = F2FS_I(inode);
 	struct f2fs_sb_info *sbi = F2FS_I_SB(inode);
+	nid_t ino = inode->i_ino;
 	int ret = 0;
 	bool need_cp = false;
 	struct writeback_control wbc = {
@@ -187,15 +188,15 @@ int f2fs_sync_file(struct file *file, int datasync)
 		}
 	} else {
 		/* if there is no written node page, write its inode page */
-		while (!sync_node_pages(sbi, inode->i_ino, &wbc)) {
-			if (fsync_mark_done(sbi, inode->i_ino))
+		while (!sync_node_pages(sbi, ino, &wbc)) {
+			if (fsync_mark_done(sbi, ino))
 				goto out;
 			mark_inode_dirty_sync(inode);
 			ret = f2fs_write_inode(inode, NULL);
 			if (ret)
 				goto out;
 		}
-		ret = wait_on_node_pages_writeback(sbi, inode->i_ino);
+		ret = wait_on_node_pages_writeback(sbi, ino);
 		if (ret)
 			goto out;
 		ret = blkdev_issue_flush(inode->i_sb->s_bdev, GFP_KERNEL, NULL);
