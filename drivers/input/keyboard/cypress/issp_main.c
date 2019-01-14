@@ -381,23 +381,6 @@ unsigned int iBlockCounter;
 unsigned int iChecksumData;
 unsigned int iChecksumTarget;
 
-#if defined(CONFIG_MACH_Q1_BD)
-#include "touchkey_fw_Q1.h"
-#elif defined(CONFIG_ARIES_NTT)
-#include "touchkey_fw_NTT.h"
-#elif defined(CONFIG_TARGET_LOCALE_NA)
-#include "touchkey_fw_NA.h"
-#elif defined(CONFIG_TARGET_LOCALE_NAATT)
-#include "touchkey_fw_NAATT.h"
-#elif defined(CONFIG_MACH_M0) || defined(CONFIG_MACH_C1) || \
-	defined(CONFIG_MACH_M3)
-#include "touchkey_fw_M0.h"
-#elif defined(CONFIG_MACH_T0)
-#include "touchkey_fw_T0.h"
-#else
-#include "touchkey_fw_U1.h"
-#endif
-
 #define EXT_I2C_SCL_HIGH\
 	do {\
 		int delay_count;\
@@ -762,13 +745,7 @@ this data should come from the HEX output of PSoC Designer.*/
 				return fIsError;
 			}
 #endif
-			/*firmware read.
-			   LoadProgramData(bBankCounter,
-			   (unsigned char)iBlockCounter);
-			   PTJ: this loads the Hydra with test data,
-			   not the krypton */
-			LoadProgramData((unsigned char)iBlockCounter,
-					bBankCounter);
+
 			iChecksumData += iLoadTarget();
 
 			/*dog_kick(); */
@@ -809,8 +786,6 @@ this data should come from the HEX output of PSoC Designer.*/
 			printk(KERN_DEBUG"Verify Loop: iBlockCounter %d",
 				iBlockCounter, 0, 0);
 			INTLOCK();
-			LoadProgramData(bBankCounter,
-					(unsigned char)iBlockCounter);
 
 			/*PTJ: READ-WRITE-SETUP used here
 			to select SRAM Bank 1, and TSYNC Enable */

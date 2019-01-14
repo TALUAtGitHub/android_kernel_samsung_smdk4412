@@ -172,7 +172,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //                              one-byte array. Modified issp_driver_routines.c
 //                              line 44 to initialize with TARGET_DATABUFF_LEN.
 //
-//                              2. Function void LoadProgramData(unsigned char
+
+//                              2. Function void LoadProgramDataunsigned char
 //                              bBlockNum) in issp_driver_routines.c had only
 //                              one parameter bBlockNum but was being called
 //                              from function main() with two parameters,
@@ -391,18 +392,6 @@ unsigned int iBlockCounter;
 unsigned int iChecksumData;
 unsigned int iChecksumTarget;
 
-//update version "eclair/vendor/samsung/apps/Lcdtest/src/com/sec/android/app/lcdtest/touch_firmware.java"
-#if defined(CONFIG_MACH_Q1_BD)
-#include "touchkey_fw_Q1.h"
-#elif defined(CONFIG_ARIES_NTT)
-#include "touchkey_fw_NTT.h"
-#elif defined(CONFIG_TARGET_LOCALE_NA)
-#include "touchkey_fw_NA.h"
-#elif defined(CONFIG_TARGET_LOCALE_NAATT)
-#include "touchkey_fw_NAATT.h"
-#else
-#include "touchkey_fw_U1.h"
-#endif
 
 //////I2C
 
@@ -755,9 +744,7 @@ int ISSP_main(void)
 				return fIsError;
 			}
 #endif
-			//firmware read.
-			//LoadProgramData(bBankCounter, (unsigned char)iBlockCounter);                      //PTJ: this loads the Hydra with test data, not the krypton
-			LoadProgramData((unsigned char)iBlockCounter, bBankCounter);	//PTJ: this loads the Hydra with test data, not the krypton
+
 			iChecksumData += iLoadTarget();	//PTJ: this loads the Krypton
 
 			//dog_kick();
@@ -794,8 +781,6 @@ int ISSP_main(void)
 			printk("Verify Loop: iBlockCounter %d", iBlockCounter,
 			       0, 0);
 			INTLOCK();
-			LoadProgramData(bBankCounter,
-					(unsigned char)iBlockCounter);
 
 			//PTJ: READ-WRITE-SETUP used here to select SRAM Bank 1, and TSYNC Enable
 #ifdef CY8C20x66
