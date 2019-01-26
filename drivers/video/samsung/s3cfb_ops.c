@@ -929,7 +929,8 @@ int s3cfb_blank(int blank_mode, struct fb_info *fb)
 #if defined(CONFIG_CPU_EXYNOS4212) || defined(CONFIG_CPU_EXYNOS4412) || defined(CONFIG_CPU_EXYNOS4210)
 	int win_status;
 #endif
-#if defined(CONFIG_CPU_EXYNOS4210)
+
+#if defined(CONFIG_CPU_EXYNOS4210) || defined(CONFIG_CPU_EXYNOS4412)
 	return 0;
 #endif
 
