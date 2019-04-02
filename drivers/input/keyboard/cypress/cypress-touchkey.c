@@ -799,7 +799,6 @@ static ssize_t touchkey_threshold_show(struct device *dev,
 }
 #endif
 
-#ifndef TEST_JIG_MODE
 static irqreturn_t touchkey_interrupt(int irq, void *dev_id)
 {
 	struct touchkey_i2c *tkey_i2c = dev_id;
@@ -903,121 +902,6 @@ static irqreturn_t touchkey_interrupt(int irq, void *dev_id)
 	}
 	return IRQ_HANDLED;
 }
-#else
-static irqreturn_t touchkey_interrupt(int irq, void *dev_id)
-{
-	struct touchkey_i2c *tkey_i2c = dev_id;
-	u8 data[18];
-	int ret;
-	int retry = 10;
-	int keycode_type = 0;
-	int pressed;
-
-#if 0
-	if (gpio_get_value(_3_GPIO_TOUCH_INT)) {
-		printk(KERN_DEBUG "[TouchKey] Unknown state.\n", __func__);
-		return IRQ_HANDLED;
-	}
-#endif
-
-	set_touchkey_debug('a');
-
-#ifdef CONFIG_CPU_FREQ
-	/* set_dvfs_target_level(LEV_800MHZ); */
-#endif
-
-	retry = 3;
-	while (retry--) {
-#if defined(CONFIG_TARGET_LOCALE_NA) || defined(CONFIG_MACH_Q1_BD)\
-	 || defined(CONFIG_MACH_C1)
-		ret = i2c_touchkey_read(tkey_i2c->client,
-				KEYCODE_REG, data, 18);
-#else
-		ret = i2c_touchkey_read(tkey_i2c->client,
-				KEYCODE_REG, data, 10);
-#endif
-		if (!ret)
-			break;
-		else {
-			printk(KERN_DEBUG
-			       "[TouchKey] i2c read failed, ret:%d, retry: %d\n",
-			       ret, retry);
-			continue;
-		}
-	}
-	if (ret < 0)
-		return IRQ_HANDLED;
-
-#if defined(CONFIG_TARGET_LOCALE_NA)
-#if defined(CONFIG_MACH_C1_NA_SPR_EPIC2_REV00)
-	menu_sensitivity = data[11];
-	home_sensitivity = data[13];
-	search_sensitivity = data[15];
-	back_sensitivity = data[17];
-#else
-	if (tkey_i2c->module_ver >= 8) {
-		menu_sensitivity = data[17];
-		home_sensitivity = data[15];
-		search_sensitivity = data[11];
-		back_sensitivity = data[13];
-	} else {
-		menu_sensitivity = data[6];
-		home_sensitivity = data[7];
-		search_sensitivity = data[8];
-		back_sensitivity = data[9];
-	}
-#endif
-#elif defined(CONFIG_MACH_Q1_BD) || defined(CONFIG_MACH_C1)
-	menu_sensitivity = data[13];
-	back_sensitivity = data[11];
-#else
-	menu_sensitivity = data[7];
-	back_sensitivity = data[9];
-#endif				/* CONFIG_TARGET_LOCALE_NA  */
-
-	set_touchkey_debug(data[0]);
-
-	keycode_type = (data[0] & TK_BIT_KEYCODE);
-	pressed = !(data[0] & TK_BIT_PRESS_EV);
-
-	if (keycode_type <= 0 || keycode_type >= touchkey_count) {
-		printk(KERN_DEBUG "[Touchkey] keycode_type err\n");
-		return IRQ_HANDLED;
-	}
-
-	if (pressed)
-		set_touchkey_debug('P');
-
-	if (get_tsp_status() && pressed)
-		printk(KERN_DEBUG "[TouchKey] touchkey pressed"
-		       " but don't send event because touch is pressed.\n");
-	else {
-		input_report_key(touchkey_driver->input_dev,
-				 touchkey_keycode[keycode_type], pressed);
-		input_sync(touchkey_driver->input_dev);
-		/* printk(KERN_DEBUG "[TouchKey] keycode:%d pressed:%d\n",
-		   touchkey_keycode[keycode_index], pressed); */
-	}
-
-	if (keycode_type == 1)
-		printk(KERN_DEBUG "search key sensitivity = %d\n",
-		       search_sensitivity);
-	if (keycode_type == 2)
-		printk(KERN_DEBUG "back key sensitivity = %d\n",
-		       back_sensitivity);
-#ifdef CONFIG_TARGET_LOCALE_NA
-	if (keycode_type == 3)
-		printk(KERN_DEBUG "home key sensitivity = %d\n",
-		       home_sensitivity);
-	if (keycode_type == 4)
-		printk(KERN_DEBUG "menu key sensitivity = %d\n",
-		       menu_sensitivity);
-#endif
-
-	set_touchkey_debug('A');
-	return IRQ_HANDLED;
-}
-#endif
 
 #ifdef CONFIG_FB
 static int sec_touchkey_fb_suspend(struct touchkey_i2c *tkey_i2c)
@@ -1079,10 +963,6 @@ static int sec_touchkey_fb_resume(struct touchkey_i2c *tkey_i2c)
 	if (!tkey_i2c->fb_suspended)
 		return 0;
 
-#ifdef TEST_JIG_MODE
-	unsigned char get_touch = 0x40;
-#endif
-
 	set_touchkey_debug('R');
 	printk(KERN_DEBUG "[TouchKey] sec_touchkey_late_resume\n");
 
@@ -1141,9 +1021,6 @@ static int sec_touchkey_fb_resume(struct touchkey_i2c *tkey_i2c)
 		printk(KERN_DEBUG "[Touchkey] LED returned on\n");
 #endif
 	}
-#ifdef TEST_JIG_MODE
-	i2c_touchkey_write(tkey_i2c->client, &get_touch, 1);
-#endif
 
 #ifdef LED_LDO_WITH_REGULATOR
 	if (!led_on_keypress && !led_fadein) {
@@ -2529,10 +2406,6 @@ static int __init touchkey_init(void)
 	}
 #endif
 
-#ifdef TEST_JIG_MODE
-	unsigned char get_touch = 0x40;
-#endif
-
 	ret = i2c_add_driver(&touchkey_i2c_driver);
 
 	if (ret) {
@@ -2540,9 +2413,6 @@ static int __init touchkey_init(void)
 	       "[TouchKey] registration failed, module not inserted.ret= %d\n",
 	       ret);
 	}
-#ifdef TEST_JIG_MODE
-	i2c_touchkey_write(tkey_i2c->client, &get_touch, 1);
-#endif
 	return ret;
 }
 
