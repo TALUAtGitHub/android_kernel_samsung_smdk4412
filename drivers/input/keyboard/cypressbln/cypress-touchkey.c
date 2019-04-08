@@ -43,7 +43,6 @@
 #include <plat/gpio-cfg.h>
 #include <mach/gpio.h>
 
-#include "issp_extern.h"
 #ifdef CONFIG_TOUCHSCREEN_ATMEL_MXT540E
 #include <linux/i2c/mxt540e.h>
 #else
@@ -206,7 +205,6 @@ static void init_hw(void);
 static int i2c_touchkey_probe(struct i2c_client *client,
 			      const struct i2c_device_id *id);
 
-extern int get_touchkey_firmware(char *version);
 static int touchkey_led_status;
 static int touchled_cmd_reversed;
 
@@ -654,129 +652,6 @@ static ssize_t touchkey_threshold_show(struct device *dev,
 	printk(KERN_DEBUG "called %s data[4] = %d\n", __func__, data[4]);
 	touchkey_threshold = data[4];
 	return sprintf(buf, "%d\n", touchkey_threshold);
-}
-#endif
-
-#if defined(CONFIG_MACH_C1_NA_SPR_EPIC2_REV00) \
-	|| defined(CONFIG_MACH_Q1_BD) \
-	|| defined(CONFIG_MACH_C1_NA_USCC_REV05) \
-	|| defined(CONFIG_TARGET_LOCALE_NA)
-void touchkey_firmware_update(void)
-{
-	char data[3];
-	int retry = 3;
-	int ret = 0;
-
-	ret = i2c_touchkey_read(KEYCODE_REG, data, 3);
-	if (ret < 0) {
-		printk(KERN_DEBUG
-		       "[TouchKey] i2c read fail. do not excute firm update.\n");
-		return;
-	}
-
-	touch_version = data[1];
-	module_version = data[2];
-
-#ifdef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
-	if (system_rev > 6) {
-		printk(KERN_DEBUG "[TouchKey] not firmup hw(system_rev=%d)\n",
-		       system_rev);
-		return;
-	}
-#endif
-
-	if ((touch_version < TK_FIRMWARE_VER) &&
-	    (module_version == TK_MODULE_VER)) {
-		printk(KERN_DEBUG "[TouchKey] firmware auto update excute\n");
-		disable_irq(IRQ_TOUCH_INT);
-		touchkey_update_status = 1;
-
-		while (retry--) {
-			if (ISSP_main() == 0) {
-				printk(KERN_DEBUG
-				       "[TouchKey]firmware update succeeded\n");
-				touchkey_update_status = 0;
-				break;
-			}
-			msleep(100);
-			printk(KERN_DEBUG
-			       "[TouchKey] firmware update failed. retry\n");
-		}
-		if (retry <= 0) {
-			touchkey_ldo_on(0);
-			touchkey_update_status = -1;
-			printk(KERN_DEBUG
-			       "[TouchKey] firmware update failed.\n");
-			msleep(300);
-		}
-		enable_irq(IRQ_TOUCH_INT);
-		init_hw();
-	} else {
-		printk(KERN_DEBUG
-		       "[TouchKey] firmware auto update do not excute\n");
-		printk(KERN_DEBUG
-		       "[TouchKey] firmware_ver(banary=%d, current=%d)\n",
-		       TK_FIRMWARE_VER, touch_version);
-		printk(KERN_DEBUG
-		       "[TouchKey] module_ver(banary=%d, current=%d)\n",
-		       TK_MODULE_VER, module_version);
-		return;
-	}
-	msleep(100);
-	i2c_touchkey_read(KEYCODE_REG, data, 3);
-	touch_version = data[1];
-	module_version = data[2];
-	printk(KERN_DEBUG "[TouchKey] firm ver = %d, module ver = %d\n",
-	       touch_version, module_version);
-}
-#else
-void touchkey_firmware_update(void)
-{
-	char data[3];
-	int retry;
-	int ret = 0;
-
-	ret = i2c_touchkey_read(KEYCODE_REG, data, 3);
-	if (ret < 0) {
-		printk(KERN_DEBUG
-		       "[TouchKey] i2c read fail. do not excute firm update.\n");
-		return;
-	}
-
-	printk(KERN_ERR "%s F/W version: 0x%x, Module version:0x%x\n", __func__,
-	       data[1], data[2]);
-	retry = 3;
-
-	touch_version = data[1];
-	module_version = data[2];
-
-	if (touch_version < 0x0A) {
-		touchkey_update_status = 1;
-		while (retry--) {
-			if (ISSP_main() == 0) {
-				printk(KERN_ERR
-				       "[TOUCHKEY]Touchkey_update succeeded\n");
-				touchkey_update_status = 0;
-				break;
-			}
-			printk(KERN_ERR "touchkey_update failed...retry...\n");
-		}
-		if (retry <= 0) {
-			touchkey_ldo_on(0);
-			touchkey_update_status = -1;
-			msleep(300);
-		}
-
-		init_hw();
-	} else {
-		if (touch_version >= 0x0A) {
-			printk(KERN_ERR
-			       "[TouchKey] Not F/W update. Cypess touch-key F/W version is latest\n");
-		} else {
-			printk(KERN_ERR
-			       "[TouchKey] Not F/W update. Cypess touch-key version(module or F/W) is not valid\n");
-		}
-	}
 }
 #endif
 
@@ -1606,17 +1481,6 @@ int touchkey_update_open(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-ssize_t touchkey_update_read(struct file *filp, char *buf, size_t count,
-			     loff_t *f_pos)
-{
-	char data[3] = { 0, };
-
-	get_touchkey_firmware(data);
-	put_user(data[1], buf);
-
-	return 1;
-}
-
 int touchkey_update_release(struct inode *inode, struct file *filp)
 {
 	return 0;
@@ -1646,75 +1510,6 @@ static ssize_t touch_version_write(struct device *dev,
 	printk(KERN_DEBUG "[TouchKey] input data --> %s\n", buf);
 
 	return size;
-}
-
-void touchkey_update_func(struct work_struct *p)
-{
-	int retry = 10;
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-	char data[3];
-	i2c_touchkey_read(KEYCODE_REG, data, 3);
-	printk(KERN_DEBUG "[%s] F/W version: 0x%x, Module version:0x%x\n",
-	       __func__, data[1], data[2]);
-#endif
-	touchkey_update_status = 1;
-	printk(KERN_DEBUG "[TouchKey] %s start\n", __func__);
-	touchkey_enable = 0;
-	while (retry--) {
-		if (ISSP_main() == 0) {
-			printk(KERN_DEBUG
-			       "[TouchKey] touchkey_update succeeded\n");
-			init_hw();
-			enable_irq(IRQ_TOUCH_INT);
-			touchkey_enable = 1;
-#if defined(CONFIG_MACH_Q1_BD)
-			touchkey_autocalibration();
-#else
-#if defined(CONFIG_TARGET_LOCALE_NA)
-			if (store_module_version >= 8)
-				touchkey_autocalibration();
-#endif
-#endif
-			touchkey_update_status = 0;
-			return;
-		}
-#if defined(CONFIG_TARGET_LOCALE_NAATT) \
-|| defined(CONFIG_TARGET_LOCALE_NA) || defined(CONFIG_MACH_Q1_BD)
-		touchkey_ldo_on(0);
-		msleep(300);
-		init_hw();
-#endif
-	}
-
-	touchkey_update_status = -1;
-	printk(KERN_DEBUG "[TouchKey] touchkey_update failed\n");
-	return;
-}
-
-static ssize_t touch_update_write(struct device *dev,
-				  struct device_attribute *attr,
-				  const char *buf, size_t size)
-{
-#ifdef CONFIG_TARGET_LOCALE_NA
-	if (store_module_version < 8) {
-		printk(KERN_DEBUG
-		       "[TouchKey] Skipping f/w update : module_version =%d\n",
-		       store_module_version);
-		touchkey_update_status = 0;
-		return 1;
-	} else {
-#endif				/* CONFIG_TARGET_LOCALE_NA */
-		printk(KERN_DEBUG "[TouchKey] touchkey firmware update\n");
-
-		if (*buf == 'S') {
-			disable_irq(IRQ_TOUCH_INT);
-			INIT_WORK(&touch_update_work, touchkey_update_func);
-			queue_work(touchkey_wq, &touch_update_work);
-		}
-		return size;
-#ifdef CONFIG_TARGET_LOCALE_NA
-	}
-#endif				/* CONFIG_TARGET_LOCALE_NA */
 }
 
 static ssize_t touch_update_read(struct device *dev,
@@ -1979,59 +1774,6 @@ static ssize_t set_touchkey_firm_version_show(struct device *dev,
 	return sprintf(buf, "0x%x\n", TK_FIRMWARE_VER);
 }
 
-static ssize_t set_touchkey_update_show(struct device *dev,
-					struct device_attribute *attr,
-					char *buf)
-{
-	/* TO DO IT */
-	int count = 0;
-	int retry = 3;
-	touchkey_update_status = 1;
-
-	while (retry--) {
-		if (ISSP_main() == 0) {
-			printk(KERN_ERR
-			       "[TOUCHKEY]Touchkey_update succeeded\n");
-			touchkey_update_status = 0;
-			count = 1;
-			break;
-		}
-		printk(KERN_ERR "touchkey_update failed... retry...\n");
-	}
-	if (retry <= 0) {
-		/* disable ldo11 */
-		touchkey_ldo_on(0);
-		msleep(300);
-		count = 0;
-		printk(KERN_ERR "[TOUCHKEY]Touchkey_update fail\n");
-		touchkey_update_status = -1;
-		return count;
-	}
-
-	init_hw();		/* after update, re initalize. */
-
-	return count;
-
-}
-
-static ssize_t set_touchkey_firm_version_read_show(struct device *dev,
-						   struct device_attribute
-						   *attr, char *buf)
-{
-	char data[3] = { 0, };
-	int count;
-
-	init_hw();
-	/*if (get_touchkey_firmware(data) != 0) { */
-	i2c_touchkey_read(KEYCODE_REG, data, 3);
-	/*} */
-	count = sprintf(buf, "0x%x\n", data[1]);
-
-	printk(KERN_DEBUG "[TouchKey] touch_version_read 0x%x\n", data[1]);
-	printk(KERN_DEBUG "[TouchKey] module_version_read 0x%x\n", data[2]);
-	return count;
-}
-
 static ssize_t set_touchkey_firm_status_show(struct device *dev,
 					     struct device_attribute *attr,
 					     char *buf)
@@ -2054,8 +1796,6 @@ static ssize_t set_touchkey_firm_status_show(struct device *dev,
 
 static DEVICE_ATTR(recommended_version, S_IRUGO | S_IWUSR | S_IWGRP,
 		   touch_version_read, touch_version_write);
-static DEVICE_ATTR(updated_version, S_IRUGO | S_IWUSR | S_IWGRP,
-		   touch_update_read, touch_update_write);
 static DEVICE_ATTR(brightness, S_IRUGO | S_IWUSR | S_IWGRP, NULL,
 		   touch_led_control);
 static DEVICE_ATTR(enable_disable, S_IRUGO | S_IWUSR | S_IWGRP, NULL,
@@ -2071,14 +1811,10 @@ static DEVICE_ATTR(touchkey_search, S_IRUGO, touchkey_search_show, NULL);
 static DEVICE_ATTR(touch_sensitivity, S_IRUGO | S_IWUSR | S_IWGRP, NULL,
 		   touch_sensitivity_control);
 /*20110223N1 firmware sync*/
-static DEVICE_ATTR(touchkey_firm_update, S_IRUGO | S_IWUSR | S_IWGRP,
-	set_touchkey_update_show, NULL);/* firmware update */
 static DEVICE_ATTR(touchkey_firm_update_status, S_IRUGO | S_IWUSR | S_IWGRP,
 	set_touchkey_firm_status_show, NULL);/* firmware update status */
 static DEVICE_ATTR(touchkey_firm_version_phone, S_IRUGO | S_IWUSR | S_IWGRP,
 	set_touchkey_firm_version_show, NULL);/* PHONE */
-static DEVICE_ATTR(touchkey_firm_version_panel, S_IRUGO | S_IWUSR | S_IWGRP,
-		   set_touchkey_firm_version_read_show, NULL);
 /*PART*/
 /*end N1 firmware sync*/
 static DEVICE_ATTR(touchkey_brightness, S_IRUGO | S_IWUSR | S_IWGRP, NULL,
@@ -2117,25 +1853,10 @@ static int __init touchkey_init(void)
 	if (IS_ERR(sec_touchkey))
 		printk(KERN_ERR "Failed to create device(sec_touchkey)!\n");
 
-	if (device_create_file(sec_touchkey, &dev_attr_touchkey_firm_update) <
-	    0) {
-		printk(KERN_ERR "Failed to create device file(%s)!\n",
-		       dev_attr_touchkey_firm_update.attr.name);
-	}
-	if (device_create_file
-	    (sec_touchkey, &dev_attr_touchkey_firm_update_status) < 0) {
-		printk(KERN_ERR "Failed to create device file(%s)!\n",
-		       dev_attr_touchkey_firm_update_status.attr.name);
-	}
 	if (device_create_file
 	    (sec_touchkey, &dev_attr_touchkey_firm_version_phone) < 0) {
 		printk(KERN_ERR "Failed to create device file(%s)!\n",
 		       dev_attr_touchkey_firm_version_phone.attr.name);
-	}
-	if (device_create_file
-	    (sec_touchkey, &dev_attr_touchkey_firm_version_panel) < 0) {
-		printk(KERN_ERR "Failed to create device file(%s)!\n",
-		       dev_attr_touchkey_firm_version_panel.attr.name);
 	}
 	if (device_create_file(sec_touchkey,
 		&dev_attr_touchkey_brightness) < 0) {
@@ -2155,12 +1876,6 @@ static int __init touchkey_init(void)
 		&dev_attr_recommended_version) < 0) {
 		pr_err("Failed to create device file(%s)!\n",
 		       dev_attr_recommended_version.attr.name);
-	}
-
-	if (device_create_file(sec_touchkey,
-		&dev_attr_updated_version) < 0) {
-		pr_err("Failed to create device file(%s)!\n",
-		       dev_attr_updated_version.attr.name);
 	}
 
 	if (device_create_file(sec_touchkey,
