@@ -194,13 +194,13 @@ static struct request *tripndroid_latter_request(struct request_queue *q, struct
 	return list_entry(rq->queuelist.next, struct request, queuelist);
 }
 
-static int tripndroid_init_queue(struct request_queue *q, struct elevator_type *e)
+static void * tripndroid_init_queue(struct request_queue *q)
 {
 	struct tripndroid_data *td;
 
 	td = kzalloc_node(sizeof(*td), GFP_KERNEL, q->node);
 	if (!td) {
-		return -ENOMEM;
+		return NULL;
 	}
         
 	INIT_LIST_HEAD(&td->fifo_list[SYNC][READ]);
@@ -215,7 +215,7 @@ static int tripndroid_init_queue(struct request_queue *q, struct elevator_type *
 	td->fifo_expire[ASYNC][WRITE] = async_write_expire;
 	td->fifo_batch = fifo_batch;
 
-	return 0;
+	return td;
 }
 
 static void tripndroid_exit_queue(struct elevator_queue *e)
