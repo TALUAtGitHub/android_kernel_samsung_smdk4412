@@ -570,6 +570,15 @@ static void __init clean_rootfs(void)
 }
 #endif
 
+static int __initdata recoveryboot = 0;
+
+static int __init bootmode_setup(char *str)
+{
+        recoveryboot = strcmp(str, "=2") == 0 ? 1 : 0;
+	return 1;
+}
+__setup("bootmode", bootmode_setup);
+
 static int __initdata do_skip_initramfs;
 
 static int __init skip_initramfs_param(char *str)
@@ -585,7 +594,7 @@ static int __init populate_rootfs(void)
 {
 	char *err;
 
-	if (do_skip_initramfs)
+	if (do_skip_initramfs || !recoveryboot)
 		return default_rootfs();
 
 	err = unpack_to_rootfs(__initramfs_start, __initramfs_size);
