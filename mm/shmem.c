@@ -2692,10 +2692,6 @@ int __init shmem_init(void)
 {
 	int error;
 
-	/* If rootfs called this, don't re-init */
-	if (shmem_inode_cachep)
-		return 0;
-
 	error = bdi_init(&shmem_backing_dev_info);
 	if (error)
 		goto out4;
