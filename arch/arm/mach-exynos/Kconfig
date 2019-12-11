@@ -1777,12 +1777,6 @@ config BT_BCM43241
 	default n
 	help
 	  Adds BCM43241 RFKILL driver for Broadcom BCM4334 chipset
-
-config BT_MGMT
-	bool "Bluetooth Mgmt"
-	default n
-	help
-	  This is for bluetooth mgmt
 endif
 
 comment "Qualcomm Modem Feature"
