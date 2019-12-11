@@ -45,6 +45,8 @@
 #define HCI_UART_ATH3K	5
 
 #define HCI_UART_RAW_DEVICE	0
+#define HCI_UART_RESET_ON_INIT	1
+#define HCI_UART_CREATE_AMP	2
 
 struct hci_uart;
 
@@ -63,6 +65,8 @@ struct hci_uart {
 	struct hci_dev		*hdev;
 	unsigned long		flags;
 	unsigned long		hdev_flags;
+
+	struct work_struct	write_work;
 
 	struct hci_uart_proto	*proto;
 	void			*priv;
