@@ -118,10 +118,25 @@ static inline int seq_nodemask_list(struct seq_file *m, nodemask_t *mask)
 }
 
 int single_open(struct file *, int (*)(struct seq_file *, void *), void *);
+int single_open_size(struct file *, int (*)(struct seq_file *, void *), void *, size_t);
 int single_release(struct inode *, struct file *);
 void *__seq_open_private(struct file *, const struct seq_operations *, int);
 int seq_open_private(struct file *, const struct seq_operations *, int);
 int seq_release_private(struct inode *, struct file *);
+int seq_put_decimal_ull(struct seq_file *m, char delimiter,
+                        unsigned long long num);
+int seq_put_decimal_ll(struct seq_file *m, char delimiter,
+                        long long num);
+
+static inline struct user_namespace *seq_user_ns(struct seq_file *seq)
+{
+#ifdef CONFIG_USER_NS
+        return seq->user_ns;
+#else
+        extern struct user_namespace init_user_ns;
+        return &init_user_ns;
+#endif
+}
 
 #define SEQ_START_TOKEN ((void *)1)
 
