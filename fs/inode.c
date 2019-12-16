@@ -1710,7 +1710,9 @@ EXPORT_SYMBOL(inode_init_owner);
  */
 bool inode_owner_or_capable(const struct inode *inode)
 {
-	if (uid_eq(current_fsuid(), inode->i_uid))
+	struct user_namespace *ns = inode_userns(inode);
+
+	if (current_user_ns() == ns && current_fsuid() == inode->i_uid)
 		return true;
 	if (ns_capable(ns, CAP_FOWNER))
 		return true;
