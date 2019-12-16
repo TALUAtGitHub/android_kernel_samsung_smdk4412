@@ -134,7 +134,7 @@ SYSCALL_DEFINE3(ioprio_set, int, which, int, who, int, ioprio)
 				break;
 
 			do_each_thread(g, p) {
-				if (!uid_eq(task_uid(p), uid))
+				if (__task_cred(p)->uid != who)
 					continue;
 				ret = set_task_ioprio(p, ioprio);
 				if (ret)
