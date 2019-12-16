@@ -246,20 +246,19 @@ static void inet_get_ping_group_range_net(struct net *net, gid_t *low,
 int ping_init_sock(struct sock *sk)
 {
 	struct net *net = sock_net(sk);
-	gid_t group = current_egid();
-	gid_t range[2];
-	struct group_info *group_info = get_current_groups();
-	int i, j, count = group_info->ngroups;
+	kgid_t group = current_egid();
+	struct group_info *group_info;
+	int i, j, count;
 	kgid_t low, high;
+	int ret = 0;
 
-	inet_get_ping_group_range_net(net, range, range+1);
-	low = make_kgid(&init_user_ns, range[0]);
-	high = make_kgid(&init_user_ns, range[1]);
-	if (!gid_valid(low) || !gid_valid(high) || gid_lt(high, low))
-		return -EACCES;
 
-	if (range[0] <= group && group <= range[1])
-		return 0;
+        if (sk->sk_family == AF_INET6)
+                inet6_sk(sk)->ipv6only = 1;
+
+        inet_get_ping_group_range_net(net, &low, &high);
+        if (gid_lte(low, group) && gid_lte(group, high))
+                return 0;
 
 	group_info = get_current_groups();
 	count = group_info->ngroups;
@@ -268,7 +267,7 @@ int ping_init_sock(struct sock *sk)
 		for (j = 0; j < cp_count; j++) {
 			kgid_t gid = group_info->blocks[i][j];
 			if (gid_lte(low, gid) && gid_lte(gid, high))
-				return 0;
+				goto out_release_group;
 		}
 
 		count -= cp_count;
