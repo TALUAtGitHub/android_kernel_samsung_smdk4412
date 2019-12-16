@@ -1487,13 +1487,13 @@ long keyctl_session_to_parent(void)
 	    !gid_eq(pcred->gid,	 mycred->egid) ||
 	    !gid_eq(pcred->egid, mycred->egid) ||
 	    !gid_eq(pcred->sgid, mycred->egid))
-		goto unlock;
+		goto not_permitted;
 
 	/* the keyrings must have the same UID */
 	if ((pcred->tgcred->session_keyring &&
 	     !uid_eq(pcred->tgcred->session_keyring->uid, mycred->euid)) ||
 	    !uid_eq(mycred->tgcred->session_keyring->uid, mycred->euid))
-		goto unlock;
+		goto not_permitted;
 
 	/* if there's an already pending keyring replacement, then we replace
 	 * that */
