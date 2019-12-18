@@ -94,4 +94,13 @@ void amba_release_regions(struct amba_device *);
 #define amba_manf(d)	AMBA_MANF_BITS((d)->periphid)
 #define amba_part(d)	AMBA_PART_BITS((d)->periphid)
 
+/*
+ * module_amba_driver() - Helper macro for drivers that don't do anything
+ * special in module init/exit.  This eliminates a lot of boilerplate.  Each
+ * module may only use this macro once, and calling it replaces module_init()
+ * and module_exit()
+ */
+#define module_amba_driver(__amba_drv) \
+	module_driver(__amba_drv, amba_driver_register, amba_driver_unregister)
+
 #endif
