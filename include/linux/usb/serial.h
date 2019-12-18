@@ -384,5 +384,20 @@ do {									\
 		printk(KERN_DEBUG "%s: " format "\n", __FILE__, ##arg);	\
 } while (0)
 
+/*
+ * module_usb_serial_driver() - Helper macro for registering a USB Serial driver
+ * @__usb_driver: usb_driver struct to register
+ * @__serial_drivers: list of usb_serial drivers to register
+ *
+ * Helper macro for USB serial drivers which do not do anything special
+ * in module init/exit. This eliminates a lot of boilerplate. Each
+ * module may only use this macro once, and calling it replaces
+ * module_init() and module_exit()
+ *
+ */
+#define module_usb_serial_driver(__usb_driver, __serial_drivers)        \
+        module_driver(__usb_driver, usb_serial_register_drivers,        \
+                       usb_serial_deregister_drivers, __serial_drivers)
+
 #endif /* __LINUX_USB_SERIAL_H */
 
