@@ -143,15 +143,4 @@ static struct platform_driver pcspkr_platform_driver = {
 };
 
 
-static int __init pcspkr_init(void)
-{
-	return platform_driver_register(&pcspkr_platform_driver);
-}
-
-static void __exit pcspkr_exit(void)
-{
-	platform_driver_unregister(&pcspkr_platform_driver);
-}
-
-module_init(pcspkr_init);
-module_exit(pcspkr_exit);
+module_platform_driver(pcspkr_platform_driver);

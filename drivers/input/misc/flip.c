@@ -391,17 +391,7 @@ static struct platform_driver sec_flip_driver = {
 	},
 };
 
-static int __init sec_flip_init(void)
-{
-	return platform_driver_register(&sec_flip_driver);
-}
-module_init(sec_flip_init);
-
-static void __exit sec_flip_exit(void)
-{
-	platform_driver_unregister(&sec_flip_driver);
-}
-module_exit(sec_flip_exit);
+module_platform_driver(sec_flip_driver);
 
 MODULE_ALIAS("platform:sec_flip");
 MODULE_DESCRIPTION("Flip Key with GPIO");

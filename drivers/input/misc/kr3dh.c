@@ -1335,17 +1335,7 @@ static struct i2c_driver kr3dh_i2c_driver = {
 	.id_table	= kr3dh_id,
 };
 
-static int __init kr3dh_init(void)
-{
-	return i2c_add_driver(&kr3dh_i2c_driver);
-}
-module_init(kr3dh_init);
-
-static void __exit kr3dh_exit(void)
-{
-	i2c_del_driver(&kr3dh_i2c_driver);
-}
-module_exit(kr3dh_exit);
+module_i2c_driver(kr3dh_i2c_driver);
 
 MODULE_AUTHOR("Donggeun Kim <dg77.kim@samsung.com>");
 MODULE_DESCRIPTION("KR3DH accelerometer driver");

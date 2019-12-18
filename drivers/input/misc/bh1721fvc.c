@@ -805,20 +805,7 @@ static struct i2c_driver bh1721fvc_driver = {
 	.remove		= bh1721fvc_remove,
 	.id_table	= bh1721fvc_id,
 };
-
-static int __init bh1721fvc_init(void)
-{
-	return i2c_add_driver(&bh1721fvc_driver);
-}
-module_init(bh1721fvc_init);
-
-static void __exit bh1721fvc_exit(void)
-{
-	bh1721fvc_dbmsg("bh1721fvc_exit +\n");
-	i2c_del_driver(&bh1721fvc_driver);
-	bh1721fvc_dbmsg("bh1721fvc_exit -\n");
-}
-module_exit(bh1721fvc_exit);
+module_i2c_driver(bh1721fvc_driver);
 
 MODULE_AUTHOR("WonHyoung Lee <whlee@sta.samsung.com>");
 MODULE_DESCRIPTION("BH1721FVC Ambient light sensor driver");

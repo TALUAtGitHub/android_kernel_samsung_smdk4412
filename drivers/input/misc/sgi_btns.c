@@ -165,16 +165,5 @@ static struct platform_driver sgi_buttons_driver = {
 	},
 };
 
-static int __init sgi_buttons_init(void)
-{
-	return platform_driver_register(&sgi_buttons_driver);
-}
-
-static void __exit sgi_buttons_exit(void)
-{
-	platform_driver_unregister(&sgi_buttons_driver);
-}
-
+module_platform_driver(sgi_buttons_driver);
 MODULE_LICENSE("GPL");
-module_init(sgi_buttons_init);
-module_exit(sgi_buttons_exit);
