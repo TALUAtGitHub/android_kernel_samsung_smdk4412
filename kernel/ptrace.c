@@ -202,8 +202,10 @@ ok:
 	smp_rmb();
 	if (task->mm)
 		dumpable = get_dumpable(task->mm);
+	rcu_read_lock();
 	if (!dumpable  && !ptrace_has_cap(task_user_ns(task), mode))
 		return -EPERM;
+	rcu_read_unlock();
 
 	return security_ptrace_access_check(task, mode);
 }
