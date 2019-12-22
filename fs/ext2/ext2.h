@@ -6,8 +6,8 @@
  */
 struct ext2_mount_options {
 	unsigned long s_mount_opt;
-	uid_t s_resuid;
-	gid_t s_resgid;
+	kuid_t s_resuid;
+	kgid_t s_resgid;
 };
 
 /*
