@@ -186,17 +186,7 @@ static struct platform_driver asoc_platform_driver = {
 	.remove = __devexit_p(samsung_asoc_platform_remove),
 };
 
-static int __init samsung_asoc_init(void)
-{
-	return platform_driver_register(&asoc_platform_driver);
-}
-module_init(samsung_asoc_init);
-
-static void __exit samsung_asoc_exit(void)
-{
-	platform_driver_unregister(&asoc_platform_driver);
-}
-module_exit(samsung_asoc_exit);
+module_platform_driver(asoc_platform_driver);
 #endif
 
 MODULE_DESCRIPTION("Samsung ASoC DMA wrapper");

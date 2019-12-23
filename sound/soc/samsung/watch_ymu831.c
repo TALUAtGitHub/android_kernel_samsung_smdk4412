@@ -193,18 +193,7 @@ static struct platform_driver snd_watch_driver = {
 };
 
 
-static int __init watch_audio_init(void)
-{
-	return platform_driver_register(&snd_watch_driver);
-}
-module_init(watch_audio_init);
-
-static void __exit watch_audio_exit(void)
-{
-	platform_driver_unregister(&snd_watch_driver);
-}
-
-module_exit(watch_audio_exit);
+module_platform_driver(snd_watch_driver);
 
 MODULE_DESCRIPTION("ALSA SoC WATCH YMU831");
 MODULE_LICENSE("GPL");
