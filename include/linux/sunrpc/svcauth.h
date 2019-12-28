@@ -18,8 +18,8 @@
 
 #define SVC_CRED_NGROUPS	32
 struct svc_cred {
-	kuid_t			cr_uid;
-	kgid_t			cr_gid;
+	uid_t			cr_uid;
+	gid_t			cr_gid;
 	struct group_info	*cr_group_info;
 };
 
@@ -134,6 +134,9 @@ extern int auth_unix_forget_old(struct auth_domain *dom);
 extern void svcauth_unix_purge(void);
 extern void svcauth_unix_info_release(struct svc_xprt *xpt);
 extern int svcauth_unix_set_client(struct svc_rqst *rqstp);
+
+extern int unix_gid_cache_create(struct net *net);
+extern void unix_gid_cache_destroy(struct net *net);
 
 static inline unsigned long hash_str(char *name, int bits)
 {
