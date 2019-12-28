@@ -1762,12 +1762,8 @@ xfsbufd(
 		struct list_head tmp;
 		struct blk_plug plug;
 
-		if (unlikely(freezing(current))) {
-			set_bit(XBT_FORCE_SLEEP, &target->bt_flags);
-			refrigerator();
-		} else {
-			clear_bit(XBT_FORCE_SLEEP, &target->bt_flags);
-		}
+		if (unlikely(freezing(current)))
+			try_to_freeze();
 
 		/* sleep for a long time if there is nothing to do. */
 		if (list_empty(&target->bt_delwrite_queue))
