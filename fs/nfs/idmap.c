@@ -204,10 +204,6 @@ static int nfs_idmap_init_keyring(void)
 		goto failed_put_cred;
 	}
 
-	ret = key_instantiate_and_link(keyring, NULL, 0, NULL, NULL);
-	if (ret < 0)
-		goto failed_put_key;
-
 	ret = register_key_type(&key_type_id_resolver);
 	if (ret < 0)
 		goto failed_put_key;
