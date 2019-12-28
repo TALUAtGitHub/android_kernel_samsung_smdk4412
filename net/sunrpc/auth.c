@@ -358,7 +358,7 @@ rpcauth_lookup_credcache(struct rpc_auth *auth, struct auth_cred * acred,
 			*entry, *new;
 	unsigned int nr;
 
-	nr = hash_long(from_kuid(&init_user_ns, acred->uid), cache->hashbits);
+	nr = hash_long(acred->uid, cache->hashbits);
 
 	rcu_read_lock();
 	hlist_for_each_entry_rcu(entry, pos, &cache->hashtable[nr], cr_hash) {
@@ -465,8 +465,8 @@ rpcauth_bind_root_cred(struct rpc_task *task, int lookupflags)
 {
 	struct rpc_auth *auth = task->tk_client->cl_auth;
 	struct auth_cred acred = {
-		.uid = GLOBAL_ROOT_UID,
-		.gid = GLOBAL_ROOT_GID,
+		.uid = 0,
+		.gid = 0,
 	};
 
 	dprintk("RPC: %5u looking up %s cred\n",
@@ -626,7 +626,7 @@ rpcauth_refreshcred(struct rpc_task *task)
 		if (err < 0)
 			goto out;
 		cred = task->tk_rqstp->rq_cred;
-	};
+	}
 	dprintk("RPC: %5u refreshing %s cred %p\n",
 		task->tk_pid, cred->cr_auth->au_ops->au_name, cred);
 

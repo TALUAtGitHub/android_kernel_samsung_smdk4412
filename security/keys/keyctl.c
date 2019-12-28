@@ -1308,10 +1308,8 @@ error:
  */
 long keyctl_set_timeout(key_serial_t id, unsigned timeout)
 {
-	struct timespec now;
 	struct key *key, *instkey;
 	key_ref_t key_ref;
-	time_t expiry;
 	long ret;
 
 	key_ref = lookup_user_key(id, KEY_LOOKUP_CREATE | KEY_LOOKUP_PARTIAL,
@@ -1337,20 +1335,7 @@ long keyctl_set_timeout(key_serial_t id, unsigned timeout)
 
 okay:
 	key = key_ref_to_ptr(key_ref);
-
-	/* make the changes with the locks held to prevent races */
-	down_write(&key->sem);
-
-	expiry = 0;
-	if (timeout > 0) {
-		now = current_kernel_time();
-		expiry = now.tv_sec + timeout;
-	}
-
-	key->expiry = expiry;
-	key_schedule_gc(key->expiry + key_gc_delay);
-
-	up_write(&key->sem);
+	key_set_timeout(key, timeout);
 	key_put(key);
 
 	ret = 0;
