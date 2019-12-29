@@ -93,103 +93,17 @@ extern int set_posix_acl(struct inode *, int, struct posix_acl *);
 extern int posix_acl_chmod(struct inode *, umode_t);
 extern int posix_acl_create(struct inode *, umode_t *, struct posix_acl **,
 		struct posix_acl **);
+extern int posix_acl_update_mode(struct inode *, umode_t *, struct posix_acl **);
 
-static inline struct posix_acl **acl_by_type(struct inode *inode, int type)
-{
-	struct posix_acl **p, *acl;
-	switch (type) {
-	case ACL_TYPE_ACCESS:
-		p = &inode->i_acl;
-		break;
-	case ACL_TYPE_DEFAULT:
-		p = &inode->i_default_acl;
-		break;
-	default:
-		return ERR_PTR(-EINVAL);
-	}
-	acl = ACCESS_ONCE(*p);
-	if (acl) {
-		spin_lock(&inode->i_lock);
-		acl = *p;
-		if (acl != ACL_NOT_CACHED)
-			acl = posix_acl_dup(acl);
-		spin_unlock(&inode->i_lock);
-	}
-	return acl;
-}
+extern int simple_set_acl(struct inode *, struct posix_acl *, int);
+extern int simple_acl_create(struct inode *, struct inode *);
 
-static inline int negative_cached_acl(struct inode *inode, int type)
-{
-	struct posix_acl **p, *acl;
-	switch (type) {
-	case ACL_TYPE_ACCESS:
-		p = &inode->i_acl;
-		break;
-	case ACL_TYPE_DEFAULT:
-		p = &inode->i_default_acl;
-		break;
-	default:
-		BUG();
-	}
-	acl = ACCESS_ONCE(*p);
-	if (acl)
-		return 0;
-	return 1;
-}
-
-static inline void set_cached_acl(struct inode *inode,
-				  int type,
-				  struct posix_acl *acl)
-{
-	struct posix_acl *old = NULL;
-	spin_lock(&inode->i_lock);
-	switch (type) {
-	case ACL_TYPE_ACCESS:
-		old = inode->i_acl;
-		inode->i_acl = posix_acl_dup(acl);
-		break;
-	case ACL_TYPE_DEFAULT:
-		old = inode->i_default_acl;
-		inode->i_default_acl = posix_acl_dup(acl);
-		break;
-	}
-	spin_unlock(&inode->i_lock);
-	if (old != ACL_NOT_CACHED)
-		posix_acl_release(old);
-}
-
-static inline void forget_cached_acl(struct inode *inode, int type)
-{
-	struct posix_acl *old = NULL;
-	spin_lock(&inode->i_lock);
-	switch (type) {
-	case ACL_TYPE_ACCESS:
-		old = inode->i_acl;
-		inode->i_acl = ACL_NOT_CACHED;
-		break;
-	case ACL_TYPE_DEFAULT:
-		old = inode->i_default_acl;
-		inode->i_default_acl = ACL_NOT_CACHED;
-		break;
-	}
-	spin_unlock(&inode->i_lock);
-	if (old != ACL_NOT_CACHED)
-		posix_acl_release(old);
-}
-
-static inline void forget_all_cached_acls(struct inode *inode)
-{
-	struct posix_acl *old_access, *old_default;
-	spin_lock(&inode->i_lock);
-	old_access = inode->i_acl;
-	old_default = inode->i_default_acl;
-	inode->i_acl = inode->i_default_acl = ACL_NOT_CACHED;
-	spin_unlock(&inode->i_lock);
-	if (old_access != ACL_NOT_CACHED)
-		posix_acl_release(old_access);
-	if (old_default != ACL_NOT_CACHED)
-		posix_acl_release(old_default);
-}
+struct posix_acl **acl_by_type(struct inode *inode, int type);
+struct posix_acl *get_cached_acl(struct inode *inode, int type);
+struct posix_acl *get_cached_acl_rcu(struct inode *inode, int type);
+void set_cached_acl(struct inode *inode, int type, struct posix_acl *acl);
+void forget_cached_acl(struct inode *inode, int type);
+void forget_all_cached_acls(struct inode *inode);
 
 static inline void cache_no_acl(struct inode *inode)
 {
@@ -202,6 +116,12 @@ static inline int posix_acl_chmod(struct inode *inode, umode_t mode)
 	return 0;
 }
 
+#define simple_set_acl		NULL
+
+static inline int simple_acl_create(struct inode *dir, struct inode *inode)
+{
+	return 0;
+}
 static inline void cache_no_acl(struct inode *inode)
 {
 }
@@ -211,6 +131,10 @@ static inline int posix_acl_create(struct inode *inode, umode_t *mode,
 {
 	*default_acl = *acl = NULL;
 	return 0;
+}
+
+static inline void forget_all_cached_acls(struct inode *inode)
+{
 }
 #endif /* CONFIG_FS_POSIX_ACL */
 
