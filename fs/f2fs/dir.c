@@ -643,7 +643,7 @@ static int f2fs_readdir(struct file *file, void *dirent, filldir_t filldir)
 	struct f2fs_dir_entry *de = NULL;
 	struct page *dentry_page = NULL;
 	struct file_ra_state *ra = &file->f_ra;
-	unsigned int n = ((unsigned long)ctx->pos / NR_DENTRY_IN_BLOCK);
+	unsigned int n = 0;
 	unsigned char d_type = DT_UNKNOWN;
 	int slots;
 
