@@ -1831,7 +1831,7 @@ static unsigned short tune_camera[] = {
 	END_SEQ, 0x0000
 };
 
-static const unsigned short tune_camera_outdoor[] = {
+static unsigned short tune_camera_outdoor[] = {
 	/*start */
 	0x0001, 0x0002, /*OVE */
 	0x002c, 0x0fff, /*DNR bypass 0x003C */

@@ -132,7 +132,7 @@ static int max8922_set_property(struct power_supply *psy,
 	return 0;
 }
 
-static irqreturn_t max8922_chg_ing_irq(int irq, void *data)
+/* static irqreturn_t max8922_chg_ing_irq(int irq, void *data)
 {
 	struct max8922_info *info = data;
 	int ret = 0;
@@ -152,7 +152,7 @@ static irqreturn_t max8922_chg_ing_irq(int irq, void *data)
 	}
 
 	return IRQ_HANDLED;
-}
+} */
 
 static __devinit int max8922_probe(struct platform_device *pdev)
 {
@@ -221,7 +221,7 @@ static __devinit int max8922_probe(struct platform_device *pdev)
 		gpio_request(pdata->gpio_ta_nconnected,
 			     "MAX8922 TA_nCONNECTED");
 	}
-#if 0
+/* #if 0
 	info->irq_chg_ing = gpio_to_irq(pdata->gpio_chg_ing);
 
 	ret = request_threaded_irq(info->irq_chg_ing, NULL,
@@ -231,7 +231,7 @@ static __devinit int max8922_probe(struct platform_device *pdev)
 	if (ret)
 		dev_err(&pdev->dev, "%s: fail to request chg_ing IRQ:"
 			" %d: %d\n", __func__, info->irq_chg_ing, ret);
-#endif
+#endif */
 
 	return 0;
 err_kfree:
