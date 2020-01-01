@@ -820,7 +820,7 @@ exit:
 	return err;
 }
 
-static int rx_rfs_packet(struct io_device *iod, struct link_device *ld,
+/* static int rx_rfs_packet(struct io_device *iod, struct link_device *ld,
 					const char *data, unsigned size)
 {
 	int err = 0;
@@ -859,7 +859,7 @@ static int rx_rfs_packet(struct io_device *iod, struct link_device *ld,
 		return -ENOMEM;
 	}
 
-	/* copy the RFS haeder to skb->data */
+	// copy the RFS haeder to skb->data
 	rcvd = size - sizeof(hdlc_start) - sizeof(hdlc_end) - pad;
 	memcpy(skb_put(skb, rcvd), ((char *)data + sizeof(hdlc_start)), rcvd);
 
@@ -867,7 +867,7 @@ static int rx_rfs_packet(struct io_device *iod, struct link_device *ld,
 	err = rx_iodev_skb(fragdata(iod, ld)->skb_recv);
 
 	return err;
-}
+} */
 
 /* called from link device when a packet arrives for this io device */
 static int io_dev_recv_data_from_link_dev(struct io_device *iod,

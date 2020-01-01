@@ -438,7 +438,6 @@ static void mxt224_ta_probe(bool ta_status)
 	unsigned int register_address = 7;
 	/*u8 calcfg; */
 	u8 noise_threshold;
-	u8 movfilter;
 	u8 calcfg_dis;
 	u8 calcfg_en;
 	u8 charge_time;
@@ -1996,10 +1995,10 @@ static void mxt224_fb_suspend(struct mxt224_data *data)
 
 static void mxt224_fb_resume(struct mxt224_data *data)
 {
+	bool ta_status = 0;
+
 	if (!data->fb_suspended)
 		return;
-
-	bool ta_status = 0;
 
 	mxt224_internal_resume(data);
 	enable_irq(data->client->irq);

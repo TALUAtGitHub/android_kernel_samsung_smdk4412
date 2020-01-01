@@ -230,7 +230,6 @@ void s3c_csis_start(int csis_id, int lanes, int settle, int align, int width, \
 {
 	struct platform_device *pdev = NULL;
 	struct s3c_platform_csis *pdata = NULL;
-	int i;
 
 	printk(KERN_INFO "csis width = %d, height = %d\n", width, height);
 

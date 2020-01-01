@@ -555,13 +555,13 @@ void (*lcd_fb_resume)(void);
 
 void s3cfb_fb_suspend(struct s3cfb_global *info)
 {
-	if (info->fb_suspended)
-		return;
-
 	struct s3c_platform_fb *pdata = to_fb_plat(info->dev);
 	struct platform_device *pdev = to_platform_device(info->dev);
 	struct s3cfb_global *fbdev[2];
 	int i, ret;
+
+	if (info->fb_suspended)
+		return;
 
 	dev_info(info->dev, "+%s\n", __func__);
 
@@ -649,15 +649,15 @@ void s3cfb_fb_suspend(struct s3cfb_global *info)
 
 void s3cfb_fb_resume(struct s3cfb_global *info)
 {
-	if (!info->fb_suspended)
-                return;
-
 	struct s3c_platform_fb *pdata = to_fb_plat(info->dev);
 	struct fb_info *fb;
 	struct s3cfb_window *win;
 	struct s3cfb_global *fbdev[2];
 	int i, j;
 	struct platform_device *pdev = to_platform_device(info->dev);
+
+	if (!info->fb_suspended)
+                return;
 
 	dev_info(info->dev, "+%s\n", __func__);
 
@@ -1392,8 +1392,6 @@ err1:
 		pdata->clk_off(pdev, &fbdev[i]->clock);
 		kfree(fbfimd->fbdev[i]);
 	}
-err0:
-	kfree(fbfimd);
 err_fimd_desc:
 	return ret;
 }

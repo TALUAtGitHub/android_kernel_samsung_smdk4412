@@ -3047,7 +3047,6 @@ static int sec_bat_read_proc(char *buf, char **start,
 {
 	struct sec_bat_info *info = data;
 	struct timespec cur_time;
-	ktime_t ktime;
 	int len = 0;
 
         get_monotonic_boottime(&cur_time);
@@ -3236,7 +3235,7 @@ static __devinit int sec_bat_probe(struct platform_device *pdev)
 	info->event_expired_time = 0xFFFFFFFF;
 #endif
 	if (info->get_lpcharging_state) {
-		if (poweroff_charging = info->get_lpcharging_state())
+		if ((poweroff_charging = info->get_lpcharging_state()))
 			info->polling_interval = POLLING_INTERVAL / 4;
 		else
 			info->polling_interval = POLLING_INTERVAL;

@@ -220,7 +220,7 @@ _mali_osk_errcode_t _ump_osk_mem_mapregion_map( ump_memory_allocation * descript
 }
 
 /* MALI_SEC */
-static u32 _ump_osk_virt_to_phys_start(ump_dd_mem * mem, u32 start, u32 address, int *index)
+/* static u32 _ump_osk_virt_to_phys_start(ump_dd_mem * mem, u32 start, u32 address, int *index)
 {
 	int i;
 	u32 offset = address - start;
@@ -238,10 +238,10 @@ static u32 _ump_osk_virt_to_phys_start(ump_dd_mem * mem, u32 start, u32 address,
 	}
 
 	return _MALI_OSK_ERR_FAULT;
-}
+} */
 
 /* MALI_SEC */
-static u32 _ump_osk_virt_to_phys_end(ump_dd_mem * mem, u32 start, u32 address, int *index)
+/* static u32 _ump_osk_virt_to_phys_end(ump_dd_mem * mem, u32 start, u32 address, int *index)
 {
 	int i;
 	u32 offset = address - start;
@@ -259,10 +259,10 @@ static u32 _ump_osk_virt_to_phys_end(ump_dd_mem * mem, u32 start, u32 address, i
 	}
 
 	return _MALI_OSK_ERR_FAULT;
-}
+} */
 
 /* MALI_SEC */
-static void _ump_osk_msync_with_virt(ump_dd_mem * mem, ump_uk_msync_op op, u32 start, u32 address, u32 size)
+/* static void _ump_osk_msync_with_virt(ump_dd_mem * mem, ump_uk_msync_op op, u32 start, u32 address, u32 size)
 {
 	int start_index, end_index;
 	u32 start_p, end_p;
@@ -309,7 +309,7 @@ static void _ump_osk_msync_with_virt(ump_dd_mem * mem, ump_uk_msync_op op, u32 s
 		}
 	}
 	return;
-}
+} */
 /* The end of MALI_SEC */
 
 static void level1_cache_flush_all(void)

@@ -1684,7 +1684,7 @@ static struct miscdevice srp_ctrl_miscdev = {
 };
 
 #ifdef CONFIG_FB
-void srp_fb_suspend()
+void srp_fb_suspend(void)
 {
 	s5pdbg("fb_suspend\n");
 
@@ -1698,7 +1698,7 @@ void srp_fb_suspend()
 	}
 }
 
-void srp_fb_resume()
+void srp_fb_resume(void)
 {
 	s5pdbg("fb_resume\n");
 

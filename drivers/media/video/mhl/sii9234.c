@@ -212,9 +212,11 @@ static u8 sii9234_tmds_control(struct sii9234_data *sii9234, bool enable);
 #ifdef __CONFIG_TMDS_OFFON_WORKAROUND__
 static u8 sii9234_tmds_control2(struct sii9234_data *sii9234, bool enable);
 #endif
+#ifndef __MHL_NEW_CBUS_MSC_CMD__
 static bool cbus_command_request(struct sii9234_data *sii9234,
 				 enum cbus_command command, u8 offset, u8 data);
 static void cbus_command_response(struct sii9234_data *sii9234);
+#endif
 static irqreturn_t sii9234_irq_thread(int irq, void *data);
 
 static void goto_d3(void);
@@ -380,7 +382,6 @@ void sii9234_mhl_hpd_handler_false(void)
 u8 mhl_onoff_ex(bool onoff)
 {
 	struct sii9234_data *sii9234 = dev_get_drvdata(sii9244_mhldev);
-	int ret;
 
 	pr_info("sii9234: %s(%s)\n", __func__, onoff ? "on" : "off");
 
@@ -564,7 +565,7 @@ static int tpi_read_reg(struct sii9234_data *sii9234, unsigned int offset,
 	return 0;
 }
 
-static int hdmi_rx_read_reg(struct sii9234_data *sii9234, unsigned int offset,
+/* static int hdmi_rx_read_reg(struct sii9234_data *sii9234, unsigned int offset,
 			    u8 *value)
 {
 	int ret;
@@ -587,7 +588,7 @@ static int hdmi_rx_read_reg(struct sii9234_data *sii9234, unsigned int offset,
 	*value = ret & 0x000000FF;
 
 	return 0;
-}
+} */
 
 static int hdmi_rx_write_reg(struct sii9234_data *sii9234, unsigned int offset,
 			     u8 value)
@@ -1203,11 +1204,6 @@ void mhl_path_enable(struct sii9234_data *sii9234, bool path_en)
 				 CBUS_LINK_CONTROL_2_REG,
 				 sii9234->mhl_status_value.linkmode, 0x0);
 #endif
-}
-
-static void cbus_handle_wrt_burst_recd(struct sii9234_data *sii9234)
-{
-	pr_debug("sii9234: CBUS WRT_BURST_RECD\n");
 }
 
 static void cbus_handle_wrt_stat_recd(struct sii9234_data *sii9234)
@@ -2842,6 +2838,7 @@ EXPORT_SYMBOL(sii9234_tmds_reset);
 
 #endif				/* CONFIG_SAMSUNG_MHL_9290 */
 
+#ifndef __MHL_NEW_CBUS_MSC_CMD__
 static void save_cbus_pkt_to_buffer(struct sii9234_data *sii9234)
 {
 	int index;
@@ -2892,7 +2889,7 @@ static void cbus_command_response(struct sii9234_data *sii9234)
 		pr_debug("sii9234: cbus_command_response CBUS_SET_INT\n");
 		if (sii9234->cbus_pkt.offset == MHL_RCHANGE_INT &&
 		    sii9234->cbus_pkt.data[0] == MHL_INT_DSCR_CHG) {
-			/*Write burst final step... Req->GRT->Write->DSCR */
+			/* Write burst final step... Req->GRT->Write->DSCR */
 			pr_debug("sii9234: MHL_RCHANGE_INT &"
 				 "MHL_INT_DSCR_CHG\n");
 		} else if (sii9234->cbus_pkt.offset == MHL_RCHANGE_INT &&
@@ -3013,7 +3010,7 @@ static void cbus_command_response(struct sii9234_data *sii9234)
 
 	if (offset)
 		cbus_command_request(sii9234, CBUS_READ_DEVCAP, offset, 0x00);
-}
+} */
 
 #ifdef DEBUG_MHL
 static void cbus_command_response_dbg_msg(struct sii9234_data *sii9234,
@@ -3044,21 +3041,21 @@ static void cbus_command_response_all(struct sii9234_data *sii9234)
 	u8 index;
 	struct cbus_packet cbus_pkt_process_buf[CBUS_PKT_BUF_COUNT];
 
-	/*take bkp of cbus_pkt_buf */
+	/* take bkp of cbus_pkt_buf */
 	memcpy(cbus_pkt_process_buf, sii9234->cbus_pkt_buf,
 	       sizeof(cbus_pkt_process_buf));
 
-	/*clear cbus_pkt_buf  to hold next request */
+	/* clear cbus_pkt_buf  to hold next request */
 	memset(sii9234->cbus_pkt_buf, 0x00, sizeof(sii9234->cbus_pkt_buf));
 
-	/*process all previous requests */
+	/* process all previous requests */
 	for (index = 0; index < CBUS_PKT_BUF_COUNT; index++) {
 		if (cbus_pkt_process_buf[index].status == true) {
 			memcpy(&sii9234->cbus_pkt, &cbus_pkt_process_buf[index],
 			       sizeof(struct cbus_packet));
 			cbus_command_response(sii9234);
 #ifdef DEBUG_MHL
-			/*print cbus_cmd messg */
+			/* print cbus_cmd messg */
 			cbus_command_response_dbg_msg(sii9234, index);
 #endif
 		}
@@ -3105,7 +3102,7 @@ static bool cbus_command_request(struct sii9234_data *sii9234,
 		start_bit = START_BIT_WRITE_STAT_INT;
 		break;
 	case CBUS_MSC_MSG:
-		/*treat offset as data[0] in case of CBUS_MSC_MSG */
+		/* treat offset as data[0] in case of CBUS_MSC_MSG */
 		sii9234->cbus_pkt.data[0] = offset;
 		sii9234->cbus_pkt.data[1] = data;
 		pr_debug("sii9234: cbus_command_request CBUS_MSC_MSG"
@@ -3151,6 +3148,7 @@ static bool cbus_command_request(struct sii9234_data *sii9234,
 
 	return true;
 }
+#endif
 
 #ifdef __CONFIG_TMDS_OFFON_WORKAROUND__
 static u8 sii9234_tmds_control(struct sii9234_data *sii9234, bool enable)
@@ -3444,7 +3442,7 @@ static irqreturn_t sii9234_irq_thread(int irq, void *data)
 		};
 
 		if (sii9234->rgnd != RGND_1K) {
-			mhl_poweroff = 1;	/*Power down mhl chip */
+			mhl_poweroff = 1; /*Power down mhl chip */
 			pr_debug("sii9234: RGND is not 1k\n");
 			sii9234->state = STATE_DISCOVERY_FAILED;
 			goto err_exit;
@@ -3713,12 +3711,6 @@ static irqreturn_t sii9234_irq_thread(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
-static void mhl_cbus_command_timer(unsigned long data)
-{
-	struct sii9234_data *sii9234 = dev_get_drvdata(sii9244_mhldev);
-	schedule_work(&sii9234->mhl_cbus_write_stat_work);
-}
-
 #ifdef __CONFIG_SS_FACTORY__
 #define SII_ID 0x92
 static ssize_t sysfs_check_mhl_command(struct class *class,
@@ -3800,84 +3792,6 @@ static ssize_t sysfs_mhl_on_store(struct class *class,
 
 static CLASS_ATTR(mhl_on, 0660, NULL, sysfs_mhl_on_store);
 #endif /*__CONFIG_MHL_FORCE_ON_FACTORY__*/
-
-static ssize_t sysfs_mhl_read_reg_show(struct device *dev,
-				       struct device_attribute *attr, char *buf)
-{
-	pr_info("sii9234: %s()\n", __func__);
-	return sprintf(buf, "sysfs_mhl_read_reg_show\n");
-}
-
-static ssize_t sysfs_mhl_read_reg_store(struct device *dev,
-					struct device_attribute *attr,
-					const char *buf, size_t size)
-{
-	struct sii9234_data *sii9234 = dev_get_drvdata(sii9244_mhldev);
-	enum page_num pn;
-	unsigned int offset;
-	int ret;
-	u8 value = 0;
-	char dest[10];
-	char *buffer = (char *)buf;
-	char *token;
-
-	if (size > 10) {
-		pr_info("sii9234: Error : Unsupported format\n");
-		return size;
-	}
-
-	if (strnicmp(buf, "mhl", 3) == 0) {
-		printk(KERN_INFO "sii9234: %s() - mhl start\n", __func__);
-		schedule_work(&sii9234->mhl_restart_work);
-	}
-
-	token = strsep(&buffer, ":");
-	if (token != NULL)
-		strcpy(dest, token);
-	else {
-		pr_info("sii9234: Error: command parsing error\n");
-		return size;
-	}
-
-	ret = kstrtouint(dest, 0, &offset);
-	if (ret != 0) {
-		pr_info("sii9234: Error : Page number\n");
-		return size;
-	}
-	pn = (enum page_num)offset;
-
-	strcpy(dest, buffer);
-	ret = kstrtouint(dest, 0, &offset);
-	if (ret || offset > 0xff) {
-		pr_info("sii9234: Error : Offset number\n");
-		return size;
-	}
-
-	switch (pn) {
-	case PAGE0:
-		mhl_tx_read_reg(sii9234, offset, &value);
-		break;
-	case PAGE1:
-		tpi_read_reg(sii9234, offset, &value);
-		break;
-	case PAGE2:
-		hdmi_rx_read_reg(sii9234, offset, &value);
-		break;
-	case PAGE3:
-		cbus_read_reg(sii9234, offset, &value);
-		break;
-	default:
-		pr_info("\nsii9234: Error : Out of the page number range\n");
-		return size;
-	}
-	pr_info("sii9234: MHL register Page%d:0x%02x = 0x%02x\n", pn, offset,
-		value);
-
-	return size;
-}
-
-static DEVICE_ATTR(mhl_read_reg, S_IRUGO | S_IWUSR,
-		   sysfs_mhl_read_reg_show, sysfs_mhl_read_reg_store);
 
 #ifdef __CONFIG_MHL_DEBUG__
 module_param_named(mhl_dbg_flag, mhl_dbg_flag, uint, 0644);
@@ -4274,12 +4188,12 @@ err_extcon:
 #ifdef __CONFIG_MHL_FORCE_ON_FACTORY__
 	class_remove_file(sec_mhl, &class_attr_mhl_on);
 #endif
- err_exit2c:
 #ifdef __CONFIG_MHL_SWING_LEVEL__
+ err_exit2c:
 	class_remove_file(sec_mhl, &class_attr_swing);
 #endif
+#ifdef __CONFIG_MHL_SWING_LEVEL__
  err_exit2b:
-#ifdef __CONFIG_SS_FACTORY__
 	class_remove_file(sec_mhl, &class_attr_test_result);
 #endif
  err_exit2a:
