@@ -3010,7 +3010,7 @@ static void cbus_command_response(struct sii9234_data *sii9234)
 
 	if (offset)
 		cbus_command_request(sii9234, CBUS_READ_DEVCAP, offset, 0x00);
-} */
+}
 
 #ifdef DEBUG_MHL
 static void cbus_command_response_dbg_msg(struct sii9234_data *sii9234,
