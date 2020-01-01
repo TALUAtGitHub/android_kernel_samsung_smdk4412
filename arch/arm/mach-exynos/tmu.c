@@ -348,7 +348,7 @@ static void exynos4_poll_cur_temp(struct work_struct *work)
 	mutex_unlock(&tmu_lock);
 }
 
-static ssize_t tmu_show_print_state(struct device *dev,
+/* static ssize_t tmu_show_print_state(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
 	int ret;
@@ -376,9 +376,7 @@ static ssize_t tmu_store_print_state(struct device *dev,
 	}
 
 	return ret;
-}
-static DEVICE_ATTR(print_state, S_IRUGO | S_IWUSR,\
-	tmu_show_print_state, tmu_store_print_state);
+} */
 
 void set_refresh_rate(unsigned int auto_refresh)
 {

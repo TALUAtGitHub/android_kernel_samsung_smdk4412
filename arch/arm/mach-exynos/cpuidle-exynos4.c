@@ -187,6 +187,7 @@ static void exynos4_gpio_conpdn_reg(void)
 	__raw_writel(val, gpio_base + GPIO_PUD_PDN_OFFSET);
 }
 
+#if defined(CONFIG_EXYNOS4212)
 static void exynos4212_gpio_conpdn_reg(void)
 {
 	void __iomem *gpio_base = S5P_VA_GPIO;
@@ -227,6 +228,7 @@ static void exynos4212_gpio_conpdn_reg(void)
 	val = __raw_readl(gpio_base + GPIO_PUD_OFFSET);
 	__raw_writel(val, gpio_base + GPIO_PUD_PDN_OFFSET);
 }
+#endif
 
 static int check_power_domain(void)
 {
@@ -346,7 +348,7 @@ static int check_usb_op(void)
 #endif
 }
 
-#if defined (CONFIG_MACH_U1_NA_SPR) || (CONFIG_MACH_U1_NA_USCC)
+#if defined (CONFIG_MACH_U1_NA_SPR)
 #include "../../../sound/soc/samsung/srp-types.h"
 #include "../../../sound/soc/samsung/idma.h"
 #endif
@@ -435,7 +437,7 @@ static int exynos4_check_operation(void)
 		return 1;
 #endif
 
-#if defined (CONFIG_MACH_U1_NA_SPR) || (CONFIG_MACH_U1_NA_USCC)
+#if defined (CONFIG_MACH_U1_NA_SPR)
 #ifdef CONFIG_SND_SAMSUNG_RP
 	if (!srp_get_status(IS_RUNNING))
 		return 1;

@@ -386,10 +386,8 @@ void g2d_mmutable_value_replace(struct mm_struct *mm,
 				unsigned long fault_addr, unsigned long l2d_value);
 
 #ifdef CONFIG_FB
-void g2d_fb_suspend();
-void g2d_fb_resume();
-static int fb_notifier_callback(struct notifier_block *self,
-				unsigned long event, void *data);
+void g2d_fb_suspend(void);
+void g2d_fb_resume(void);
 #endif
 
 /* fimg2d_core */

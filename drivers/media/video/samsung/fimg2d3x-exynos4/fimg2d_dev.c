@@ -57,6 +57,11 @@
 
 struct g2d_global *g2d_dev;
 
+#ifdef CONFIG_FB
+static int fb_notifier_callback(struct notifier_block *self,
+				unsigned long event, void *data);
+#endif
+
 #define LV1_SHIFT		20
 #define LV2_BASE_MASK		0x3ff
 #define LV2_PT_MASK		0xff000
@@ -541,13 +546,14 @@ static int g2d_remove(struct platform_device *dev)
 }
 
 #if defined(CONFIG_FB)
-void g2d_fb_suspend()
+void g2d_fb_suspend(void)
 {
+	int i = 0;
+
 	if (g2d_dev->fb_suspended)
 		return;
 
 	g2d_dev->fb_suspended = true;
-	int i = 0;
 
 	atomic_set(&g2d_dev->ready_to_run, 0);
 
@@ -576,7 +582,7 @@ void g2d_fb_suspend()
 #endif
 }
 
-void g2d_fb_resume()
+void g2d_fb_resume(void)
 {
 	if (!g2d_dev->fb_suspended)
 		return;
@@ -621,7 +627,7 @@ static int fb_notifier_callback(struct notifier_block *self,
 #endif
 
 #if !defined(CONFIG_FB)
-static int g2d_suspend(struct platform_device *dev, pm_message_t state)
+static inline int g2d_suspend(struct platform_device *dev, pm_message_t state)
 {
 	int i = 0;
 

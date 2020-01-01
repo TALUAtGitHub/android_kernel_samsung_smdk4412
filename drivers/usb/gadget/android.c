@@ -984,7 +984,7 @@ static int diag_function_bind_config(struct android_usb_function *f,
 {
 	char *name;
 	char buf[32], *b;
-	int once = 0, err = -1;
+	int err = -1;
 	int (*notify)(uint32_t, const char *) = NULL;
 
 	strlcpy(buf, diag_clients, sizeof(buf));
@@ -1539,7 +1539,6 @@ static int android_bind(struct usb_composite_dev *cdev)
 {
 	struct android_dev *dev;
 	struct usb_gadget	*gadget = cdev->gadget;
-	struct android_configuration *conf;
 	int			gcnum, id, ret;
 
 	/* Bind to the last android_dev that was probed */
@@ -1837,7 +1836,6 @@ err_alloc:
 static int android_remove(struct platform_device *pdev)
 {
 	struct android_dev *dev = NULL;
-	struct android_usb_platform_data *pdata = pdev->dev.platform_data;
 
 	/* Find the android dev from the list */
 	list_for_each_entry(dev, &android_dev_list, list_item) {
