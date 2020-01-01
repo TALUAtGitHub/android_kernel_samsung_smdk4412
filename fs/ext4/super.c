@@ -1013,12 +1013,12 @@ static int ext4_show_options(struct seq_file *seq, struct dentry *root)
 		seq_puts(seq, ",nogrpid");
 	if (!uid_eq(sbi->s_resuid, make_kuid(&init_user_ns, EXT4_DEF_RESUID)) ||
 	    le16_to_cpu(es->s_def_resuid) != EXT4_DEF_RESUID) {
-		seq_puts("resuid=%u",
+		seq_printf(seq, ",resuid=%u",
 				from_kuid_munged(&init_user_ns, sbi->s_resuid));
 	}
 	if (!gid_eq(sbi->s_resgid, make_kgid(&init_user_ns, EXT4_DEF_RESGID)) ||
 	    le16_to_cpu(es->s_def_resgid) != EXT4_DEF_RESGID) {
-		seq_puts("resgid=%u",
+		seq_printf(seq, ",resgid=%u",
 				from_kgid_munged(&init_user_ns, sbi->s_resgid));
 	}
 	if (test_opt(sb, ERRORS_RO)) {

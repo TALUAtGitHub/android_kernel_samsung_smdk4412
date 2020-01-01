@@ -132,28 +132,6 @@ static int max8922_set_property(struct power_supply *psy,
 	return 0;
 }
 
-static irqreturn_t max8922_chg_ing_irq(int irq, void *data)
-{
-	struct max8922_info *info = data;
-	int ret = 0;
-
-	dev_info(info->dev, "chg_ing IRQ occurred!\n");
-
-	if (gpio_get_value(info->pdata->gpio_ta_nconnected))
-		return IRQ_HANDLED;
-
-	if (info->pdata->topoff_cb)
-		ret = info->pdata->topoff_cb();
-
-	if (ret) {
-		dev_err(info->dev, "%s: error from topoff_cb(%d)\n", __func__,
-			ret);
-		return IRQ_HANDLED;
-	}
-
-	return IRQ_HANDLED;
-}
-
 static __devinit int max8922_probe(struct platform_device *pdev)
 {
 	struct max8922_platform_data *pdata = dev_get_platdata(&pdev->dev);
@@ -221,17 +199,6 @@ static __devinit int max8922_probe(struct platform_device *pdev)
 		gpio_request(pdata->gpio_ta_nconnected,
 			     "MAX8922 TA_nCONNECTED");
 	}
-#if 0
-	info->irq_chg_ing = gpio_to_irq(pdata->gpio_chg_ing);
-
-	ret = request_threaded_irq(info->irq_chg_ing, NULL,
-				   max8922_chg_ing_irq,
-				   IRQF_TRIGGER_RISING | IRQF_ONESHOT,
-				   "chg_ing", info);
-	if (ret)
-		dev_err(&pdev->dev, "%s: fail to request chg_ing IRQ:"
-			" %d: %d\n", __func__, info->irq_chg_ing, ret);
-#endif
 
 	return 0;
 err_kfree:

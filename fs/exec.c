@@ -112,6 +112,7 @@ static inline void put_binfmt(struct linux_binfmt * fmt)
  */
 SYSCALL_DEFINE1(uselib, const char __user *, library)
 {
+	struct linux_binfmt *fmt;
 	struct file *file;
 	char *tmp = getname(library);
 	int error = PTR_ERR(tmp);
@@ -141,24 +142,21 @@ SYSCALL_DEFINE1(uselib, const char __user *, library)
 	fsnotify_open(file);
 
 	error = -ENOEXEC;
-	if(file->f_op) {
-		struct linux_binfmt * fmt;
 
-		read_lock(&binfmt_lock);
-		list_for_each_entry(fmt, &formats, lh) {
-			if (!fmt->load_shlib)
-				continue;
-			if (!try_module_get(fmt->module))
-				continue;
-			read_unlock(&binfmt_lock);
-			error = fmt->load_shlib(file);
-			read_lock(&binfmt_lock);
-			put_binfmt(fmt);
-			if (error != -ENOEXEC)
-				break;
-		}
+	read_lock(&binfmt_lock);
+	list_for_each_entry(fmt, &formats, lh) {
+		if (!fmt->load_shlib)
+			continue;
+		if (!try_module_get(fmt->module))
+			continue;
 		read_unlock(&binfmt_lock);
+		error = fmt->load_shlib(file);
+		read_lock(&binfmt_lock);
+		put_binfmt(fmt);
+		if (error != -ENOEXEC)
+			break;
 	}
+	read_unlock(&binfmt_lock);
 exit:
 	fput(file);
 out:
@@ -1294,15 +1292,17 @@ static void bprm_fill_uid(struct linux_binprm *bprm)
 {
 	struct inode *inode;
 	unsigned int mode;
-	uid_t uid;
-	gid_t gid;
+	kuid_t uid;
+	kgid_t gid;
 
 	/* clear any previous set[ug]id data from a previous binary */
 	bprm->cred->euid = current_euid();
 	bprm->cred->egid = current_egid();
 
-	if (bprm->file->f_path.mnt->mnt_flags & MNT_NOSUID &&
-                task_no_new_privs(current))
+	if (bprm->file->f_path.mnt->mnt_flags & MNT_NOSUID)
+		return;
+
+	if (task_no_new_privs(current))
 		return;
 
 	inode = bprm->file->f_path.dentry->d_inode;
@@ -1319,6 +1319,11 @@ static void bprm_fill_uid(struct linux_binprm *bprm)
 	gid = inode->i_gid;
 	mutex_unlock(&inode->i_mutex);
 
+	/* We ignore suid/sgid if there are no mappings for them in the ns */
+	if (!kuid_has_mapping(bprm->cred->user_ns, uid) ||
+		 !kgid_has_mapping(bprm->cred->user_ns, gid))
+		return;
+
 	if (mode & S_ISUID) {
 		bprm->per_clear |= PER_CLEAR_ON_SETID;
 		bprm->cred->euid = uid;
@@ -1330,47 +1335,17 @@ static void bprm_fill_uid(struct linux_binprm *bprm)
 	}
 }
 
-/* 
- * Fill the binprm structure from the inode. 
+/*
+ * Fill the binprm structure from the inode.
  * Check permissions, then read the first 128 (BINPRM_BUF_SIZE) bytes
  *
  * This may be called multiple times for binary chains (scripts for example).
  */
 int prepare_binprm(struct linux_binprm *bprm)
 {
-        umode_t mode;
-        struct inode * inode = file_inode(bprm->file);
 	int retval;
 
-        mode = inode->i_mode;
-	if (bprm->file->f_op == NULL)
-		return -EACCES;
-
-	/* clear any previous set[ug]id data from a previous binary */
-	bprm->cred->euid = current_euid();
-	bprm->cred->egid = current_egid();
-
-        if (!(bprm->file->f_path.mnt->mnt_flags & MNT_NOSUID) &&
-            !task_no_new_privs(current) &&
-            kuid_has_mapping(bprm->cred->user_ns, inode->i_uid) &&
-            kgid_has_mapping(bprm->cred->user_ns, inode->i_gid)) {
-                /* Set-uid? */
-                if (mode & S_ISUID) {
-                        bprm->per_clear |= PER_CLEAR_ON_SETID;
-                        bprm->cred->euid = inode->i_uid;
-                }
-
-                /* Set-gid? */
-                /*
-                 * If setgid is set but no group execute bit then this
-                 * is a candidate for mandatory locking, not a setgid
-                 * executable.
-                 */
-                if ((mode & (S_ISGID | S_IXGRP)) == (S_ISGID | S_IXGRP)) {
-                        bprm->per_clear |= PER_CLEAR_ON_SETID;
-                        bprm->cred->egid = inode->i_gid;
-                }
-	}
+	bprm_fill_uid(bprm);
 
 	/* fill in binprm security blob */
 	retval = security_bprm_set_creds(bprm);

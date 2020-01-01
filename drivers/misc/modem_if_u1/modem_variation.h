@@ -155,7 +155,7 @@ static link_init_call link_init_func[] = {
 	LINK_INIT_CALL(pld),
 };
 
-static int call_modem_init_func(struct modem_ctl *mc, struct modem_data *pdata)
+static int __maybe_unused call_modem_init_func(struct modem_ctl *mc, struct modem_data *pdata)
 {
 	if (modem_init_func[pdata->modem_type])
 		return modem_init_func[pdata->modem_type](mc, pdata);
@@ -163,7 +163,7 @@ static int call_modem_init_func(struct modem_ctl *mc, struct modem_data *pdata)
 		return -ENOTSUPP;
 }
 
-static struct link_device *call_link_init_func(struct platform_device *pdev,
+static struct link_device __maybe_unused *call_link_init_func(struct platform_device *pdev,
 			enum modem_link link_type)
 {
 	if (link_init_func[link_type])

@@ -2019,7 +2019,7 @@ static void max8997_muic_mhl_detect(struct work_struct *work)
 		if (!mdata->is_mhl_attached())
 			goto out;
 	}
-#endif /* !CONFIG_MACH_U1 */
+#endif
 	if (info->acc_type == MUIC_ACC_TYPE_MHL) {
 		dev_info(info->dev, "%s: mhl attach\n", __func__);
 #ifdef CONFIG_EXTCON
@@ -2030,7 +2030,9 @@ static void max8997_muic_mhl_detect(struct work_struct *work)
 			mdata->mhl_cb(MAX8997_MUIC_ATTACHED);
 #endif
 	}
+#if !defined(CONFIG_MACH_U1) && !defined(CONFIG_MACH_TRATS)
 out:
+#endif
 	mutex_unlock(&info->mutex);
 }
 

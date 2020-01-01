@@ -2404,6 +2404,7 @@ static struct mmc_blk_data *mmc_blk_alloc(struct mmc_card *card)
 	return md;
 }
 
+#ifdef CONFIG_WIMAX_CMC
 static int mmc_blk_alloc_part(struct mmc_card *card,
 			      struct mmc_blk_data *md,
 			      unsigned int part_type,
@@ -2453,6 +2454,7 @@ static int mmc_blk_alloc_parts(struct mmc_card *card, struct mmc_blk_data *md)
 
 	return ret;
 }
+#endif
 
 static int
 mmc_blk_set_blksize(struct mmc_blk_data *md, struct mmc_card *card)

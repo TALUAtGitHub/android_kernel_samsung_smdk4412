@@ -15,7 +15,7 @@
 
 #include <plat/system-reset.h>
 
-static void arch_idle(void)
+static void __maybe_unused arch_idle(void)
 {
 	/* nothing here yet */
 }

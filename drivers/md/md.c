@@ -298,7 +298,7 @@ static void md_make_request(struct request_queue *q, struct bio *bio)
 	}
 	if (mddev->ro == 1 && unlikely(rw == WRITE)) {
 		bio_endio(bio, bio_sectors(bio) == 0 ? 0 : -EROFS);
-		return 0;
+		return;
 	}
 	smp_rmb(); /* Ensure implications of  'active' are visible */
 	rcu_read_lock();

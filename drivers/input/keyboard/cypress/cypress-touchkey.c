@@ -801,7 +801,7 @@ static ssize_t touchkey_threshold_show(struct device *dev,
 }
 #endif
 
-#if defined(TK_HAS_FIRMWARE_UPDATE)
+/* #if defined(TK_HAS_FIRMWARE_UPDATE)
 static int touchkey_firmware_update(struct touchkey_i2c *tkey_i2c)
 {
 	int retry = 3;
@@ -933,7 +933,7 @@ static int touchkey_firmware_update(struct touchkey_i2c *tkey_i2c)
 	}
 	return ret;
 }
-#endif
+#endif */
 
 #ifndef TEST_JIG_MODE
 static irqreturn_t touchkey_interrupt(int irq, void *dev_id)
@@ -948,7 +948,7 @@ static irqreturn_t touchkey_interrupt(int irq, void *dev_id)
 	set_touchkey_debug('a');
 
 	if (!atomic_read(&tkey_i2c->keypad_enable)) {
-		return;
+		return IRQ_HANDLED;
 	}
 
 	retry = 3;
@@ -1158,11 +1158,11 @@ static irqreturn_t touchkey_interrupt(int irq, void *dev_id)
 #ifdef CONFIG_FB
 static int sec_touchkey_fb_suspend(struct touchkey_i2c *tkey_i2c)
 {
-	if (tkey_i2c->fb_suspended)
-		return 0;
-
 	int ret;
 	int i;
+
+	if (tkey_i2c->fb_suspended)
+		return 0;
 
 	disable_irq(tkey_i2c->irq);
 	ret = cancel_work_sync(&tkey_i2c->update_work);
@@ -1843,40 +1843,6 @@ static ssize_t set_touchkey_firm_status_show(struct device *dev,
 	return count;
 }
 
-static ssize_t sec_keypad_enable_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	struct touchkey_i2c *tkey_i2c = dev_get_drvdata(dev);
-
-	return sprintf(buf, "%d\n", atomic_read(&tkey_i2c->keypad_enable));
-}
-
-static ssize_t sec_keypad_enable_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count)
-{
-	struct touchkey_i2c *tkey_i2c = dev_get_drvdata(dev);
-
-	unsigned int val = 0;
-	sscanf(buf, "%d", &val);
-	val = (val == 0 ? 0 : 1);
-	atomic_set(&tkey_i2c->keypad_enable, val);
-	if (val) {
-		set_bit(KEY_BACK, tkey_i2c->input_dev->keybit);
-		set_bit(KEY_MENU, tkey_i2c->input_dev->keybit);
-		set_bit(KEY_HOME, tkey_i2c->input_dev->keybit);
-	} else {
-		clear_bit(KEY_BACK, tkey_i2c->input_dev->keybit);
-		clear_bit(KEY_MENU, tkey_i2c->input_dev->keybit);
-		clear_bit(KEY_HOME, tkey_i2c->input_dev->keybit);
-	}
-	input_sync(tkey_i2c->input_dev);
-
-	return count;
-}
-
-static DEVICE_ATTR(keypad_enable, S_IRUGO|S_IWUSR, sec_keypad_enable_show,
-	      sec_keypad_enable_store);
-
 static DEVICE_ATTR(recommended_version, S_IRUGO | S_IWUSR | S_IWGRP,
 		   touch_version_read, touch_version_write);
 static DEVICE_ATTR(updated_version, S_IRUGO | S_IWUSR | S_IWGRP,
@@ -2070,6 +2036,9 @@ static void disable_touchkey_backlights(void) {
 }
 
 static void enable_led_notification(void) {
+#ifdef LED_LDO_WITH_REGULATOR
+	int brightness = get_touchkey_voltage(bln_led_blink.brightness);
+#endif
 	mutex_lock(&led_notification_mutex);
 	printk(KERN_DEBUG "[TouchKey-BLN] %s\n", __func__);
 	if (touchkey_enable != 1) {
@@ -2086,7 +2055,6 @@ static void enable_led_notification(void) {
 			bln_blink_freezed = false;
 			printk(KERN_DEBUG
 				"[TouchKey-BLN] %s: Using breathing for LED-blink control.\n", __func__);
-			int brightness = get_touchkey_voltage(bln_led_blink.brightness);
 			// Always on
 			if (bln_led_blink.delay_on == 1) {
 				printk(KERN_DEBUG
@@ -2131,7 +2099,7 @@ static void enable_led_notification(void) {
 			bln_notification_timeout_sec =
 				CURRENT_TIME.tv_sec + bln_notification_timeout / 1000;
 			printk(KERN_DEBUG
-				"[TouchKey-BLN] %s: Starting notification timeout (%d - %d)\n",
+				"[TouchKey-BLN] %s: Starting notification timeout (%d - %ld)\n",
 				__func__, CURRENT_TIME.tv_sec, bln_notification_timeout_sec);
 
 			/* restart the timer */
@@ -2361,7 +2329,7 @@ static ssize_t bln_breathing_write( struct device *dev, struct device_attribute 
 	if (bln_led_blink_enabled) {
 		printk(KERN_DEBUG "[TouchKey-BLN] %s: LED blink automatically enabled\n", __func__);
 	} else {
-		printk(KERN_DEBUG "[TouchKey-BLN] %s: LED blink automatically disabled%s\n", __func__);
+		printk(KERN_DEBUG "[TouchKey-BLN] %s: LED blink automatically disabled\n", __func__);
 	}
 	if (bln_breathing != 1) bln_stop_breathing();
 	return size;
@@ -2589,12 +2557,12 @@ static void bln_handle_notification_timeout_timer(unsigned long data)
 {
 	if (bln_notification_timeout > 0) {
 		struct timespec spec = CURRENT_TIME;
-		printk(KERN_DEBUG "[TouchKey-BLN] %s: Timing out in %d seconds\n",
+		printk(KERN_DEBUG "[TouchKey-BLN] %s: Timing out in %ld seconds\n",
 			__func__, bln_notification_timeout_sec - spec.tv_sec);
 
 		if (spec.tv_sec > bln_notification_timeout_sec) {
 			printk(KERN_DEBUG
-				"[TouchKey-BLN] %s: Timed out at %d (scheduled: %d)\n",
+				"[TouchKey-BLN] %s: Timed out at %ld (scheduled: %ld)\n",
 				__func__, spec.tv_sec, bln_notification_timeout_sec);
 
 			/* we cannot call the timeout directly as it causes a kernel
@@ -2611,20 +2579,6 @@ static struct miscdevice led_device = {
 	.minor = MISC_DYNAMIC_MINOR,
 	.name  = "notification",
 };
-
-static ssize_t led_on_touch_read( struct device *dev, struct device_attribute *attr, char *buf )
-{
-	return sprintf(buf,"%d\n", led_on_keypress ? 0 : 1);
-}
-
-static ssize_t led_on_touch_write( struct device *dev, struct device_attribute *attr, const char *buf, size_t size )
-{
-	if (!strncmp(buf, "on", 2)) led_on_keypress = 1;
-	else if (!strncmp(buf, "off", 3)) led_on_keypress = 0;
-	else sscanf(buf,"%d\n", &led_on_keypress);
-	led_on_keypress = led_on_keypress ? 0 : 1;
-	return size;
-}
 
 static DEVICE_ATTR(led, S_IRUGO | S_IWUGO, bln_notification_led_read, bln_notification_led_write);
 static DEVICE_ATTR(notification_enabled, S_IRUGO | S_IWUGO, bln_enabled_read, bln_enabled_write);
@@ -2782,7 +2736,7 @@ static int i2c_touchkey_probe(struct i2c_client *client,
 
 	tkey_i2c->pdata->led_power_on(1);
 
-#if defined(TK_HAS_FIRMWARE_UPDATE)
+/* #if defined(TK_HAS_FIRMWARE_UPDATE)
 	ret = touchkey_firmware_update(tkey_i2c);
 	if (ret < 0) {
 		printk(KERN_ERR
@@ -2792,7 +2746,7 @@ static int i2c_touchkey_probe(struct i2c_client *client,
 		touchkey_probe = false;
 		return -EBUSY;
 	}
-#endif
+#endif */
 
 #ifdef CONFIG_FB
 	tkey_i2c->fb_suspended = false;

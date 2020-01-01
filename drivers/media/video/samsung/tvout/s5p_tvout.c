@@ -59,8 +59,8 @@ struct work_struct tvout_resume_work;
 static struct notifier_block fb_notif;
 bool fb_suspended;
 static DEFINE_MUTEX(s5p_tvout_mutex);
-static void s5p_tvout_fb_suspend();
-static void s5p_tvout_fb_resume();
+static void s5p_tvout_fb_suspend(void);
+static void s5p_tvout_fb_resume(void);
 static int fb_notifier_callback(struct notifier_block *self,
 				unsigned long event, void *data);
 #endif
@@ -87,7 +87,6 @@ static ssize_t hdmi_set_audio_read(struct device *dev,
 static ssize_t hdmi_set_audio_store(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t size)
 {
-	char *after;
 	bool value = !strncmp(buf, "1", 1) ? true : false;
 
 	printk(KERN_ERR "[HDMI] Change AUDIO PATH: %d\n", (int)value);
@@ -556,7 +555,7 @@ static int s5p_tvout_remove(struct platform_device *pdev)
 
 #ifdef CONFIG_PM
 #ifdef CONFIG_FB
-static void s5p_tvout_fb_suspend()
+static void s5p_tvout_fb_suspend(void)
 {
 	tvout_dbg("\n");
 #ifdef CLOCK_GATING_ON_EARLY_SUSPEND
@@ -576,7 +575,7 @@ static void s5p_tvout_fb_suspend()
 	return;
 }
 
-static void s5p_tvout_fb_resume()
+static void s5p_tvout_fb_resume(void)
 {
 	tvout_dbg("\n");
 

@@ -72,7 +72,7 @@ static unsigned int fb_busfreq_table[S3C_FB_MAX_WIN + 1] = {
 	267160,
 	267160
 };
-#else
+#elif defined(CONFIG_BUSFREQ_OPP)
 static unsigned int fb_busfreq_table[S3C_FB_MAX_WIN + 1] = {
 	100100,
 	100100,
@@ -919,9 +919,6 @@ int s3cfb_setcolreg(unsigned int regno, unsigned int red,
 
 int s3cfb_blank(int blank_mode, struct fb_info *fb)
 {
-#if defined(CONFIG_CPU_EXYNOS4210)
-	return 0;
-#endif
 	struct s3cfb_window *win = fb->par;
 	struct s3cfb_window *tmp_win;
 	struct s3cfb_global *fbdev = get_fimd_global(win->id);
@@ -931,6 +928,9 @@ int s3cfb_blank(int blank_mode, struct fb_info *fb)
 	int i;
 #if defined(CONFIG_CPU_EXYNOS4212) || defined(CONFIG_CPU_EXYNOS4412) || defined(CONFIG_CPU_EXYNOS4210)
 	int win_status;
+#endif
+#if defined(CONFIG_CPU_EXYNOS4210)
+	return 0;
 #endif
 
 	dev_info(fbdev->dev, "change blank mode=%d, fb%d, win%d\n", blank_mode, fb->node, win->id);
@@ -1940,10 +1940,10 @@ static int s3c_fb_set_win_config(struct s3cfb_global *fbdev,
 	struct s3c_reg_data *regs;
 	struct sync_fence *fence;
 	struct sync_pt *pt;
-	int fd;
+	int fd = 0;
 
 	if (fbdev->support_fence == FENCE_SUPPORT)
-	fd = get_unused_fd();
+		fd = get_unused_fd();
 
 	if (fd < 0) {
 		dev_err(fbdev->dev, "could not get unused_fd.\n");
@@ -1963,8 +1963,8 @@ static int s3c_fb_set_win_config(struct s3cfb_global *fbdev,
 				sync_fence_install(fence, fd);
 				win_data->fence = fd;
 			} else
-				dev_err(fbdev->dev, "creating fence is failed");
- 
+				dev_err(fbdev->dev, "creating fence has failed");
+
 			sw_sync_timeline_inc(fbdev->timeline, 1);
 		}
 		mutex_unlock(&fbdev->output_lock);
@@ -2031,7 +2031,7 @@ static int s3c_fb_set_win_config(struct s3cfb_global *fbdev,
 				sync_fence_install(fence, fd);
 				win_data->fence = fd;
 			} else
-				dev_err(fbdev->dev, "creating fence is failed");
+				dev_err(fbdev->dev, "creating fence has failed");
 
 			list_add_tail(&regs->list, &fbdev->update_regs_list);
 			mutex_unlock(&fbdev->update_regs_list_lock);
@@ -2050,8 +2050,10 @@ int s3cfb_ioctl(struct fb_info *fb, unsigned int cmd, unsigned long arg)
 	struct fb_var_screeninfo *var = &fb->var;
 	struct s3cfb_window *win = fb->par;
 	struct s3cfb_global *fbdev = get_fimd_global(win->id);
-#if defined(CONFIG_CPU_EXYNOS4210)
+#if !defined (CONFIG_CPU_EXYNOS4212) && !defined (CONFIG_CPU_EXYNOS4412) && !defined (CONFIG_CPU_EXYNOS4210)
 	struct s3cfb_lcd *lcd = fbdev->lcd;
+#endif
+#if defined(CONFIG_CPU_EXYNOS4210)
 	unsigned int addr = 0;
 #endif
 
