@@ -47,9 +47,9 @@
 #define MUIC_PRINT_LOG()	{}
 #endif
 
-/* static struct switch_dev switch_dock = {
+static struct switch_dev switch_dock = {
 	.name = "dock",
-}; */
+};
 
 extern struct class *sec_class;
 
