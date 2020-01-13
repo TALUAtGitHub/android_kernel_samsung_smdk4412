@@ -912,44 +912,94 @@ static unsigned short tune_camera[] = {
 	END_SEQ, 0x0000
 };
 
-struct mdnie_tuning_info tuning_table[CABC_MAX][MODE_MAX][SCENARIO_MAX] = {
+struct mdnie_tuning_info tuning_table[CABC_MAX][MODE_MAX][OUTDOOR_MAX][SCENARIO_MAX] = {
 	{
 		{
-			{"dynamic_ui",		tune_dynamic_ui},
-			{"dynamic_video",	tune_dynamic_video},
-			{"dynamic_video",	tune_dynamic_video},
-			{"dynamic_video",	tune_dynamic_video},
-			{"camera",		tune_camera},
-			{"dynamic_ui",		tune_dynamic_ui},
-			{"dynamic_gallery",	tune_dynamic_gallery},
-			{"dynamic_vt",		tune_dynamic_vt}
+			{
+				{"dynamic_ui",		tune_dynamic_ui},
+				{"dynamic_video",	tune_dynamic_video},
+				{"dynamic_video",	tune_dynamic_video},
+				{"dynamic_video",	tune_dynamic_video},
+				{"camera",		tune_camera},
+				{"dynamic_ui",		tune_dynamic_ui},
+				{"dynamic_gallery",	tune_dynamic_gallery},
+				{"dynamic_vt",		tune_dynamic_vt}
+			}, {
+				/* OUTDOOR DUMMY */
+				{"dynamic_ui",		tune_dynamic_ui},
+				{"dynamic_video",	tune_dynamic_video},
+				{"dynamic_video",	tune_dynamic_video},
+				{"dynamic_video",	tune_dynamic_video},
+				{"camera",		tune_camera},
+				{"dynamic_ui",		tune_dynamic_ui},
+				{"dynamic_gallery",	tune_dynamic_gallery},
+				{"dynamic_vt",		tune_dynamic_vt}
+			}
+
 		}, {
-			{"standard_ui",		tune_standard_ui},
-			{"standard_video",	tune_standard_video},
-			{"standard_video",	tune_standard_video},
-			{"standard_video",	tune_standard_video},
-			{"camera",		tune_camera},
-			{"standard_ui",		tune_standard_ui},
-			{"standard_gallery",	tune_standard_gallery},
-			{"standard_vt",		tune_standard_vt}
+			{
+				{"standard_ui",		tune_standard_ui},
+				{"standard_video",	tune_standard_video},
+				{"standard_video",	tune_standard_video},
+				{"standard_video",	tune_standard_video},
+				{"camera",		tune_camera},
+				{"standard_ui",		tune_standard_ui},
+				{"standard_gallery",	tune_standard_gallery},
+				{"standard_vt",		tune_standard_vt}
+			}, {
+				/* OUTDOOR DUMMY */
+				{"standard_ui",		tune_standard_ui},
+				{"standard_video",	tune_standard_video},
+				{"standard_video",	tune_standard_video},
+				{"standard_video",	tune_standard_video},
+				{"camera",		tune_camera},
+				{"standard_ui",		tune_standard_ui},
+				{"standard_gallery",	tune_standard_gallery},
+				{"standard_vt",		tune_standard_vt}
+			}
 		}, {
-			{"natural_ui",		tune_natural_ui},
-			{"natural_video",	tune_natural_video},
-			{"natural_video",	tune_natural_video},
-			{"natural_video",	tune_natural_video},
-			{"camera",		tune_camera},
-			{"natural_ui",		tune_natural_ui},
-			{"natural_gallery",	tune_natural_gallery},
-			{"natural_vt",		tune_natural_vt}
+			{
+				{"natural_ui",		tune_natural_ui},
+				{"natural_video",	tune_natural_video},
+				{"natural_video",	tune_natural_video},
+				{"natural_video",	tune_natural_video},
+				{"camera",		tune_camera},
+				{"natural_ui",		tune_natural_ui},
+				{"natural_gallery",	tune_natural_gallery},
+				{"natural_vt",		tune_natural_vt}
+			}, {
+				/* OUTDOOR DUMMY */
+				{"natural_ui",		tune_natural_ui},
+				{"natural_video",	tune_natural_video},
+				{"natural_video",	tune_natural_video},
+				{"natural_video",	tune_natural_video},
+				{"camera",		tune_camera},
+				{"natural_ui",		tune_natural_ui},
+				{"natural_gallery",	tune_natural_gallery},
+				{"natural_vt",		tune_natural_vt}
+			}
+
 		}, {
-			{"movie_ui",		tune_movie_ui},
-			{"movie_video",		tune_movie_video},
-			{"movie_video",		tune_movie_video},
-			{"movie_video",		tune_movie_video},
-			{"camera",		tune_camera},
-			{"movie_ui",		tune_movie_ui},
-			{"movie_gallery",	tune_movie_gallery},
-			{"movie_vt",		tune_movie_vt}
+			{
+				{"movie_ui",		tune_movie_ui},
+				{"movie_video",		tune_movie_video},
+				{"movie_video",		tune_movie_video},
+				{"movie_video",		tune_movie_video},
+				{"camera",		tune_camera},
+				{"movie_ui",		tune_movie_ui},
+				{"movie_gallery",	tune_movie_gallery},
+				{"movie_vt",		tune_movie_vt}
+			}, {
+				/* OUTDOOR DUMMY */
+				{"movie_ui",		tune_movie_ui},
+				{"movie_video",		tune_movie_video},
+				{"movie_video",		tune_movie_video},
+				{"movie_video",		tune_movie_video},
+				{"camera",		tune_camera},
+				{"movie_ui",		tune_movie_ui},
+				{"movie_gallery",	tune_movie_gallery},
+				{"movie_vt",		tune_movie_vt}
+			}
 		}
 	}
 };
