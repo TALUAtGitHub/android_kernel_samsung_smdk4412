@@ -1854,8 +1854,11 @@ config MACH_KONA_SENSOR
           GP2A030A / SHARP
 
 config CHARGE_LEVEL
-	bool "Charge level interface"
+	bool "Charging current control interface for Samsung devices with the MAX77693 charging IC"
 	depends on BATTERY_MAX77693_CHARGER && BATTERY_SAMSUNG
 	default y
 	help
-	  Allows configuration of ac and usb charging levels
+	  Allows configuration of AC, wireless and USB charging
+	  levels/current for Samsung devices which use the Samsung
+	  battery driver and have the MAX77693 charging IC such as
+	  the Samsung Galaxy S3 (GT-i9300).
