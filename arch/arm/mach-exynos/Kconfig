@@ -1861,6 +1861,7 @@ config MACH_KONA_SENSOR
 
 config CHARGE_LEVEL
 	bool "Charge level interface"
-	default y
+	depends on BATTERY_MAX77693_CHARGER && BATTERY_SAMSUNG
+	default n
 	help
 	  Allows configuration of ac and usb charging levels
