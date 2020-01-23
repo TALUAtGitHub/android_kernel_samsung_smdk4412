@@ -1773,7 +1773,7 @@ static int __cpuinit cpufreq_cpu_callback(struct notifier_block *nfb,
 static struct notifier_block __refdata cpufreq_cpu_notifier = {
     .notifier_call = cpufreq_cpu_callback,
 };
-#if defined(CONFIG_CPU_UNDERVOLTING)
+#if defined(CONFIG_EXYNOS4_CPU_VOLTAGE_CONTROL)
 void create_standard_UV_interfaces(void);
 #endif
 /*********************************************************************
@@ -1838,7 +1838,7 @@ int cpufreq_register_driver(struct cpufreq_driver *driver_data)
 
 	register_hotcpu_notifier(&cpufreq_cpu_notifier);
 	pr_debug("driver %s up and running\n", driver_data->name);
-#if defined(CONFIG_CPU_UNDERVOLTING)
+#if defined(CONFIG_EXYNOS4_CPU_VOLTAGE_CONTROL)
 	create_standard_UV_interfaces();
 #endif
 	return 0;

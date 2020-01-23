@@ -721,8 +721,8 @@ config SLP_PROCESS_MON
 	  Providing monitoring important processes. Users can register the process
 	  with sysfs.
 
-config CPU_UNDERVOLTING
-	tristate "Several undervolting interfaces"
+config EXYNOS4_CPU_VOLTAGE_CONTROL
+	tristate "Several voltage control interfaces for Exynos 4 CPUs"
 	default n
 
 endif # MISC_DEVICES
