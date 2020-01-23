@@ -723,6 +723,6 @@ config SLP_PROCESS_MON
 
 config CPU_UNDERVOLTING
 	tristate "Several undervolting interfaces"
-	default y
+	default n
 
 endif # MISC_DEVICES
