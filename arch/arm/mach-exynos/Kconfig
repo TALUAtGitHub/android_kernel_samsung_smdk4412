@@ -1856,7 +1856,7 @@ config MACH_KONA_SENSOR
 config CHARGE_LEVEL
 	bool "Charging current control interface for Samsung devices with the MAX77693 charging IC"
 	depends on BATTERY_MAX77693_CHARGER && BATTERY_SAMSUNG
-	default n
+	default y
 	help
 	  Allows configuration of AC, wireless and USB charging
 	  levels/current for Samsung devices which use the Samsung
