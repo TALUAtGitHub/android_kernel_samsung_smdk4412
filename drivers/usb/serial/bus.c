@@ -52,6 +52,7 @@ static int usb_serial_device_probe(struct device *dev)
 {
 	struct usb_serial_driver *driver;
 	struct usb_serial_port *port;
+	struct device *tty_dev;
 	int retval = 0;
 	int minor;
 
@@ -60,8 +61,6 @@ static int usb_serial_device_probe(struct device *dev)
 		retval = -ENODEV;
 		goto exit;
 	}
-	if (port->dev_state != PORT_REGISTERING)
-		goto exit;
 
 	driver = port->serial->type;
 	if (driver->port_probe) {
@@ -73,12 +72,20 @@ static int usb_serial_device_probe(struct device *dev)
 	retval = device_create_file(dev, &dev_attr_port_number);
 	if (retval) {
 		if (driver->port_remove)
-			retval = driver->port_remove(port);
+			driver->port_remove(port);
 		goto exit;
 	}
 
 	minor = port->number;
-	tty_register_device(usb_serial_tty_driver, minor, dev);
+	tty_dev = tty_register_device(usb_serial_tty_driver, minor, dev);
+	if (IS_ERR(tty_dev)) {
+		retval = PTR_ERR(tty_dev);
+		device_remove_file(dev, &dev_attr_port_number);
+		if (driver->port_remove)
+			driver->port_remove(port);
+		goto exit;
+	}
+
 	dev_info(&port->serial->dev->dev,
 		 "%s converter now attached to ttyUSB%d\n",
 		 driver->description, minor);
@@ -97,9 +104,6 @@ static int usb_serial_device_remove(struct device *dev)
 	port = to_usb_serial_port(dev);
 	if (!port)
 		return -ENODEV;
-
-	if (port->dev_state != PORT_UNREGISTERING)
-		return retval;
 
 	device_remove_file(&port->dev, &dev_attr_port_number);
 
