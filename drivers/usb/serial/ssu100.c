@@ -46,7 +46,7 @@
 #define FULLPWRBIT          0x00000080
 #define NEXT_BOARD_POWER_BIT        0x00000004
 
-static int debug;
+static bool debug;
 
 /* Version Information */
 #define DRIVER_VERSION "v0.1"
@@ -70,7 +70,6 @@ static struct usb_driver ssu100_driver = {
 	.id_table		       = id_table,
 	.suspend		       = usb_serial_suspend,
 	.resume			       = usb_serial_resume,
-	.no_dynamic_id		       = 1,
 	.supports_autosuspend	       = 1,
 };
 
@@ -78,7 +77,6 @@ struct ssu100_port_private {
 	spinlock_t status_lock;
 	u8 shadowLSR;
 	u8 shadowMSR;
-	wait_queue_head_t delta_msr_wait; /* Used for TIOCMIWAIT */
 	struct async_icount icount;
 };
 
@@ -387,14 +385,18 @@ static int wait_modem_info(struct usb_serial_port *port, unsigned int arg)
 	spin_unlock_irqrestore(&priv->status_lock, flags);
 
 	while (1) {
-		wait_event_interruptible(priv->delta_msr_wait,
-					 ((priv->icount.rng != prev.rng) ||
+		wait_event_interruptible(port->delta_msr_wait,
+					 (port->serial->disconnected ||
+					  (priv->icount.rng != prev.rng) ||
 					  (priv->icount.dsr != prev.dsr) ||
 					  (priv->icount.dcd != prev.dcd) ||
 					  (priv->icount.cts != prev.cts)));
 
 		if (signal_pending(current))
 			return -ERESTARTSYS;
+
+		if (port->serial->disconnected)
+			return -EIO;
 
 		spin_lock_irqsave(&priv->status_lock, flags);
 		cur = priv->icount;
@@ -478,7 +480,6 @@ static int ssu100_attach(struct usb_serial *serial)
 	}
 
 	spin_lock_init(&priv->status_lock);
-	init_waitqueue_head(&priv->delta_msr_wait);
 	usb_set_serial_port_data(port, priv);
 
 	return ssu100_initdevice(serial->dev);
@@ -533,19 +534,16 @@ static void ssu100_dtr_rts(struct usb_serial_port *port, int on)
 
 	dbg("%s\n", __func__);
 
-	mutex_lock(&port->serial->disc_mutex);
-	if (!port->serial->disconnected) {
-		/* Disable flow control */
-		if (!on &&
-		    ssu100_setregister(dev, 0, UART_MCR, 0) < 0)
+	/* Disable flow control */
+	if (!on) {
+		if (ssu100_setregister(dev, 0, UART_MCR, 0) < 0)
 			dev_err(&port->dev, "error from flowcontrol urb\n");
-		/* drop RTS and DTR */
-		if (on)
-			set_mctrl(dev, TIOCM_DTR | TIOCM_RTS);
-		else
-			clear_mctrl(dev, TIOCM_DTR | TIOCM_RTS);
 	}
-	mutex_unlock(&port->serial->disc_mutex);
+	/* drop RTS and DTR */
+	if (on)
+		set_mctrl(dev, TIOCM_DTR | TIOCM_RTS);
+	else
+		clear_mctrl(dev, TIOCM_DTR | TIOCM_RTS);
 }
 
 static void ssu100_update_msr(struct usb_serial_port *port, u8 msr)
@@ -567,7 +565,7 @@ static void ssu100_update_msr(struct usb_serial_port *port, u8 msr)
 			priv->icount.dcd++;
 		if (msr & UART_MSR_TERI)
 			priv->icount.rng++;
-		wake_up_interruptible(&priv->delta_msr_wait);
+		wake_up_interruptible(&port->delta_msr_wait);
 	}
 }
 
@@ -600,10 +598,10 @@ static void ssu100_update_lsr(struct usb_serial_port *port, u8 lsr,
 			if (*tty_flag == TTY_NORMAL)
 				*tty_flag = TTY_FRAME;
 		}
-		if (lsr & UART_LSR_OE){
+		if (lsr & UART_LSR_OE) {
 			priv->icount.overrun++;
-			if (*tty_flag == TTY_NORMAL)
-				*tty_flag = TTY_OVERRUN;
+			tty_insert_flip_char(tty_port_tty_get(&port->port),
+					0, TTY_OVERRUN);
 		}
 	}
 
@@ -624,11 +622,8 @@ static int ssu100_process_packet(struct urb *urb,
 	if ((len >= 4) &&
 	    (packet[0] == 0x1b) && (packet[1] == 0x1b) &&
 	    ((packet[2] == 0x00) || (packet[2] == 0x01))) {
-		if (packet[2] == 0x00) {
+		if (packet[2] == 0x00)
 			ssu100_update_lsr(port, packet[3], &flag);
-			if (flag == TTY_OVERRUN)
-				tty_insert_flip_char(tty, 0, TTY_OVERRUN);
-		}
 		if (packet[2] == 0x01)
 			ssu100_update_msr(port, packet[3]);
 
@@ -677,7 +672,6 @@ static struct usb_serial_driver ssu100_device = {
 	},
 	.description	     = DRIVER_DESC,
 	.id_table	     = id_table,
-	.usb_driver	     = &ssu100_driver,
 	.num_ports	     = 1,
 	.open		     = ssu100_open,
 	.close		     = ssu100_close,
@@ -693,41 +687,11 @@ static struct usb_serial_driver ssu100_device = {
 	.disconnect          = usb_serial_generic_disconnect,
 };
 
-static int __init ssu100_init(void)
-{
-	int retval;
+static struct usb_serial_driver * const serial_drivers[] = {
+	&ssu100_device, NULL
+};
 
-	dbg("%s", __func__);
-
-	/* register with usb-serial */
-	retval = usb_serial_register(&ssu100_device);
-
-	if (retval)
-		goto failed_usb_sio_register;
-
-	retval = usb_register(&ssu100_driver);
-	if (retval)
-		goto failed_usb_register;
-
-	printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_VERSION ":"
-	       DRIVER_DESC "\n");
-
-	return 0;
-
-failed_usb_register:
-	usb_serial_deregister(&ssu100_device);
-failed_usb_sio_register:
-	return retval;
-}
-
-static void __exit ssu100_exit(void)
-{
-	usb_deregister(&ssu100_driver);
-	usb_serial_deregister(&ssu100_device);
-}
-
-module_init(ssu100_init);
-module_exit(ssu100_exit);
+module_usb_serial_driver(ssu100_driver, serial_drivers);
 
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");
