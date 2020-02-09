@@ -1076,7 +1076,7 @@ static struct request *bfq_find_rq_fmerge(struct bfq_data *bfqd,
 	bfqq = cic_to_bfqq(cic, bfq_bio_sync(bio));
 	spin_unlock(&bfqd->eqm_lock);
 	if (bfqq != NULL) {
-		sector_t sector = bio->bi_sector + bio_sectors(bio);
+		sector_t sector = bio->bi_iter.bi_sector + bio_sectors(bio);
 
 		return elv_rb_find(&bfqq->sort_list, sector);
 	}
@@ -1270,7 +1270,7 @@ static inline sector_t bfq_io_struct_pos(void *io_struct, bool request)
 	if (request)
 		return blk_rq_pos(io_struct);
 	else
-		return ((struct bio *)io_struct)->bi_sector;
+		return ((struct bio *)io_struct)->bi_iter.bi_sector;
 }
 
 static inline sector_t bfq_dist_from(sector_t pos1,
