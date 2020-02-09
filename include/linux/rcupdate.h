@@ -364,10 +364,12 @@ extern int rcu_my_thread_group_empty(void);
 		(_________p1); \
 	})
 #define __rcu_assign_pointer(p, v, space) \
-	do { \
-		smp_wmb(); \
+	({ \
+		if (!__builtin_constant_p(v) || \
+		    ((v) != NULL)) \
+			smp_wmb(); \
 		(p) = (typeof(*v) __force space *)(v); \
-	} while (0)
+	})
 
 
 /**
