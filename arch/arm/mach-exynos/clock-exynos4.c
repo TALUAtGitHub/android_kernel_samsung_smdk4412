@@ -434,6 +434,7 @@ static struct clksrc_clk exynos4_clk_pclk_acp = {
 	.reg_div = { .reg = EXYNOS4_CLKDIV_DMC0, .shift = 4, .size = 3 },
 };
 
+#ifdef CONFIG_CPU_EXYNOS4212
 static struct clk *exynos4_clkset_c2c_list[] = {
 	[0] = &exynos4_clk_mout_mpll.clk,
 	[1] = &exynos4_clk_sclk_apll.clk,
@@ -444,7 +445,6 @@ static struct clksrc_sources exynos4_clkset_mout_c2c = {
 	.nr_sources	= ARRAY_SIZE(exynos4_clkset_c2c_list),
 };
 
-#ifdef CONFIG_CPU_EXYNOS4212
 static struct clksrc_clk exynos4_clk_sclk_c2c = {
 	.clk	= {
 		.name		= "sclk_c2c",
