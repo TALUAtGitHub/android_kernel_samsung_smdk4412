@@ -22,7 +22,7 @@
 #include <linux/kallsyms.h>
 #include <linux/delay.h>
 
-#define ROUNDDOWN_STEP 1000
+#define ROUNDDOWN_STEP 1
 
 #define CUSTOMVOLTAGE_VERSION 1
 #define CPU_UV_MV_MAX 1600000
