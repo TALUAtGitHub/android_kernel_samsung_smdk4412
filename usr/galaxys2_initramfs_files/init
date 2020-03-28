@@ -9,29 +9,29 @@ busybox rm init
 busybox mount -t proc proc /proc
 busybox mount -t sysfs sysfs /sys
 
-#############################
-# ISOlated RECovery boot ONLY
-#############################
-# Since Android Q demands system-as-root we don't need a ramdisk anymore for normal boot.
-# However, we still need a ramdisk to start the ISOlated RECovery stored in mmcblk0p6.
+load_image=/stage1/boot.cpio
 
-load_image=/stage1/isorec.cpio
+if busybox grep -q bootmode=2 /proc/cmdline ; then
 
-# if the raw /dev/block/platform/dw_mmc/by-name/RECOVERY
-# partition contains valid lzop-compressed data
-if busybox lzop -dc /dev/block/mmcblk0p6 > ${load_image} ; then
-    # and if said data is a valid cpio archive
-    if busybox cpio -t < ${load_image} ; then
-        # then use it as the recovery ramdisk
-        busybox cpio -i < ${load_image}
+    # recovery boot
 
-        busybox umount /sys
-        busybox umount /proc
-        busybox date >>boot.txt
-        busybox rm -fr /stage1 /dev/*
-        export PATH="${_PATH}"
-        exec /init
+    # if the raw /dev/block/platform/dw_mmc/by-name/RECOVERY
+    # partition contains valid lzop-compressed data
+    if busybox lzop -dc /dev/block/mmcblk0p6 > /stage1/isorec.cpio ; then
+        # and if said data is a valid cpio archive
+        if busybox cpio -t < /stage1/isorec.cpio ; then
+            # then use it as the recovery ramdisk
+            load_image=/stage1/isorec.cpio
+        fi
     fi
 fi
 
+busybox cpio -i < ${load_image}
+
+busybox umount /sys
+busybox umount /proc
+busybox date >>boot.txt
+busybox rm -fr /stage1 /dev/*
+export PATH="${_PATH}"
+exec /init
 
