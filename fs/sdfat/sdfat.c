@@ -429,15 +429,17 @@ out_unlocked:
 #else /* LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0) */
 static inline sector_t __sdfat_bio_sector(struct bio *bio)
 {
-	return bio->bi_sector;
+	return bio->bi_iter.bi_sector;
 }
 
 static inline void __sdfat_set_bio_iterate(struct bio *bio, sector_t sector,
 		unsigned int size, unsigned int idx, unsigned int done)
 {
-	bio->bi_sector = sector;
-	bio->bi_idx = idx;
-	bio->bi_size = size; //PAGE_SIZE;
+	struct bvec_iter *iter = &(bio->bi_iter);
+
+	iter->bi_sector = sector;
+	iter->bi_size = size;
+	iter->bi_idx = idx;
 }
 
 static void __sdfat_truncate_pagecache(struct inode *inode,
@@ -571,16 +573,6 @@ out_unlocked:
 	 */
 	sdfat_free_namebuf(nb);
 	return err;
-}
-#endif
-
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
-	/* EMPTY */
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0) */
-static inline struct inode *file_inode(const struct file *f)
-{
-	return f->f_dentry->d_inode;
 }
 #endif
 
@@ -772,45 +764,6 @@ static struct dentry *sdfat_lookup(struct inode *dir, struct dentry *dentry,
 #endif
 
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
-	/* NOTHING NOW */
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(3, 5, 0) */
-#define GLOBAL_ROOT_UID (0)
-#define GLOBAL_ROOT_GID (0)
-
-static inline bool uid_eq(uid_t left, uid_t right)
-{
-	return left == right;
-}
-
-static inline bool gid_eq(gid_t left, gid_t right)
-{
-	return left == right;
-}
-
-static inline uid_t from_kuid_munged(struct user_namespace *to, uid_t kuid)
-{
-	return kuid;
-}
-
-static inline gid_t from_kgid_munged(struct user_namespace *to, gid_t kgid)
-{
-	return kgid;
-}
-
-static inline uid_t make_kuid(struct user_namespace *from, uid_t uid)
-{
-	return uid;
-}
-
-static inline gid_t make_kgid(struct user_namespace *from, gid_t gid)
-{
-	return gid;
-}
-#endif
-
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0)
 static struct dentry *__d_make_root(struct inode *root_inode)
 {
 	return d_make_root(root_inode);
@@ -818,10 +771,10 @@ static struct dentry *__d_make_root(struct inode *root_inode)
 
 static void __sdfat_do_truncate(struct inode *inode, loff_t old, loff_t new)
 {
-	down_write(&SDFAT_I(inode)->truncate_lock);
+	//down_write(&SDFAT_I(inode)->truncate_lock);
 	truncate_setsize(inode, new);
 	sdfat_truncate(inode, old);
-	up_write(&SDFAT_I(inode)->truncate_lock);
+	//up_write(&SDFAT_I(inode)->truncate_lock);
 }
 
 static sector_t sdfat_aop_bmap(struct address_space *mapping, sector_t block)
@@ -844,47 +797,8 @@ static int sdfat_show_options(struct seq_file *m, struct dentry *root)
 {
 	return __sdfat_show_options(m, root->d_sb);
 }
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(3, 4, 0) */
-static inline void set_nlink(struct inode *inode, unsigned int nlink)
-{
-	inode->i_nlink = nlink;
-}
-
-static struct dentry *__d_make_root(struct inode *root_inode)
-{
-	return d_alloc_root(root_inode);
-}
-
-static void __sdfat_do_truncate(struct inode *inode, loff_t old, loff_t new)
-{
-		truncate_setsize(inode, new);
-		sdfat_truncate(inode, old);
-}
-
-static sector_t sdfat_aop_bmap(struct address_space *mapping, sector_t block)
-{
-	sector_t blocknr;
-
-	/* sdfat_get_cluster() assumes the requested blocknr isn't truncated. */
-	down_read(&mapping->host->i_alloc_sem);
-	blocknr = generic_block_bmap(mapping, block, sdfat_get_block);
-	up_read(&mapping->host->i_alloc_sem);
-	return blocknr;
-}
-
-static int sdfat_mkdir(struct inode *dir, struct dentry *dentry, int mode)
-{
-	return __sdfat_mkdir(dir, dentry);
-}
-
-static int sdfat_show_options(struct seq_file *m, struct vfsmount *mnt)
-{
-	return __sdfat_show_options(m, mnt->mnt_sb);
-}
-#endif
 
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 0)
 #define __sdfat_generic_file_fsync(filp, start, end, datasync) \
 		generic_file_fsync(filp, start, end, datasync)
 
@@ -892,14 +806,6 @@ static int sdfat_file_fsync(struct file *filp, loff_t start, loff_t end, int dat
 {
 	return __sdfat_file_fsync(filp, start, end, datasync);
 }
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(3, 1, 0) */
-#define __sdfat_generic_file_fsync(filp, start, end, datasync) \
-		generic_file_fsync(filp, datasync)
-static int sdfat_file_fsync(struct file *filp, int datasync)
-{
-	return __sdfat_file_fsync(filp, 0, 0, datasync);
-}
-#endif
 
 /*************************************************************************
  * MORE FUNCTIONS WHICH HAS KERNEL VERSION DEPENDENCY
@@ -2508,7 +2414,6 @@ static struct dentry *__sdfat_lookup(struct inode *dir, struct dentry *dentry)
 		 * In such case, we reuse an alias instead of new dentry
 		 */
 		if (d_unhashed(alias)) {
-			BUG_ON(alias->d_name.hash_len != dentry->d_name.hash_len);
 			sdfat_msg(sb, KERN_INFO, "rehashed a dentry(%p) "
 				"in read lookup", alias);
 			d_drop(dentry);

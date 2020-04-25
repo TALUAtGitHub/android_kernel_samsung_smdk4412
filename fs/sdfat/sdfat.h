@@ -200,9 +200,7 @@ struct sdfat_inode_info {
 	loff_t i_size_aligned;          /* block-aligned i_size (used in cont_write_begin) */
 	loff_t i_pos;               /* on-disk position of directory entry or 0 */
 	struct hlist_node i_hash_fat;    /* hash by i_location */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0)
 	struct rw_semaphore truncate_lock; /* protect bmap against truncate */
-#endif
 #ifdef	CONFIG_SDFAT_DFR
 	struct defrag_info dfr_info;
 #endif
