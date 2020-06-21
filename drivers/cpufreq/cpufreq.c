@@ -32,6 +32,9 @@
 
 #include <trace/events/power.h>
 
+/* The initial maximum CPU frequency */
+#define initial_frequency 1200000
+
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
  * level driver of CPUFreq support, and its spinlock. This lock
@@ -933,6 +936,7 @@ static int cpufreq_add_dev(struct sys_device *sys_dev)
 #endif
 	if (!found)
 		policy->governor = CPUFREQ_DEFAULT_GOVERNOR;
+
 	/* call driver. From then on the cpufreq must be able
 	 * to accept all calls to ->verify and ->setpolicy for this CPU
 	 */
@@ -941,6 +945,12 @@ static int cpufreq_add_dev(struct sys_device *sys_dev)
 		pr_debug("initialization failed\n");
 		goto err_unlock_policy;
 	}
+
+#ifdef CONFIG_EXYNOS4210_1200MHZ_SUPPORT
+	if (policy->max != initial_frequency)
+		policy->max = initial_frequency;
+#endif
+
 	policy->user_policy.min = policy->min;
 	policy->user_policy.max = policy->max;
 
