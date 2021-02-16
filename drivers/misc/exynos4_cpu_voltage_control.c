@@ -443,7 +443,6 @@ void create_standard_UV_interfaces(void)
 	ret = sysfs_create_file(&policy->kobj, &vdd_levels.attr);
 	ret = sysfs_create_file(&policy->kobj, &UV_mV_table.attr);
 	ret = sysfs_create_file(&policy->kobj, &UV_uV_table.attr);
-	ret = sysfs_create_file(&policy->kobj, &cpufreq_freq_attr_scaling_available_freqs.attr);
 }
 
 static int __init customvoltage_init(void)
