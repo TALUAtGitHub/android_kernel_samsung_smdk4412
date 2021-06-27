@@ -906,7 +906,6 @@ static irqreturn_t touchkey_interrupt(int irq, void *dev_id)
 #ifdef CONFIG_FB
 static int sec_touchkey_fb_suspend(struct touchkey_i2c *tkey_i2c)
 {
-	int ret;
 	int i;
 
 	if (tkey_i2c->fb_suspended)
@@ -1103,26 +1102,6 @@ static ssize_t touch_version_write(struct device *dev,
 	printk(KERN_DEBUG "[TouchKey] input data --> %s\n", buf);
 
 	return size;
-}
-
-static ssize_t touch_update_read(struct device *dev,
-				 struct device_attribute *attr, char *buf)
-{
-	struct touchkey_i2c *tkey_i2c = dev_get_drvdata(dev);
-	int count = 0;
-
-	printk(KERN_DEBUG
-	       "[TouchKey] touch_update_read: update_status %d\n",
-	       tkey_i2c->update_status);
-
-	if (tkey_i2c->update_status == TK_UPDATE_PASS)
-		count = sprintf(buf, "PASS\n");
-	else if (tkey_i2c->update_status == TK_UPDATE_DOWN)
-		count = sprintf(buf, "Downloading\n");
-	else if (tkey_i2c->update_status == TK_UPDATE_FAIL)
-		count = sprintf(buf, "Fail\n");
-
-	return count;
 }
 
 static ssize_t touchkey_led_control(struct device *dev,
@@ -1412,43 +1391,6 @@ static ssize_t touch_sensitivity_control(struct device *dev,
 	return size;
 }
 
-static ssize_t set_touchkey_firm_version_read_show(struct device *dev,
-						   struct device_attribute
-						   *attr, char *buf)
-{
-	struct touchkey_i2c *tkey_i2c = dev_get_drvdata(dev);
-	char data[3] = { 0, };
-	int count;
-
-	i2c_touchkey_read(tkey_i2c->client, KEYCODE_REG, data, 3);
-	count = sprintf(buf, "0x%x\n", data[1]);
-
-	printk(KERN_DEBUG "[TouchKey] touch_version_read 0x%x\n", data[1]);
-	printk(KERN_DEBUG "[TouchKey] module_version_read 0x%x\n", data[2]);
-	return count;
-}
-
-static ssize_t set_touchkey_firm_status_show(struct device *dev,
-					     struct device_attribute *attr,
-					     char *buf)
-{
-	struct touchkey_i2c *tkey_i2c = dev_get_drvdata(dev);
-	int count = 0;
-
-	printk(KERN_DEBUG
-	       "[TouchKey] touch_update_read: update_status %d\n",
-	       tkey_i2c->update_status);
-
-	if (tkey_i2c->update_status == TK_UPDATE_PASS)
-		count = sprintf(buf, "PASS\n");
-	else if (tkey_i2c->update_status == TK_UPDATE_DOWN)
-		count = sprintf(buf, "Downloading\n");
-	else if (tkey_i2c->update_status == TK_UPDATE_FAIL)
-		count = sprintf(buf, "Fail\n");
-
-	return count;
-}
-
 static DEVICE_ATTR(recommended_version, S_IRUGO | S_IWUSR | S_IWGRP,
 		   touch_version_read, touch_version_write);
 static DEVICE_ATTR(brightness, S_IRUGO | S_IWUSR | S_IWGRP, NULL,
@@ -1465,10 +1407,6 @@ static DEVICE_ATTR(touchkey_search, S_IRUGO, touchkey_search_show, NULL);
 
 static DEVICE_ATTR(touch_sensitivity, S_IRUGO | S_IWUSR | S_IWGRP, NULL,
 		   touch_sensitivity_control);
-static DEVICE_ATTR(touchkey_firm_update_status, S_IRUGO | S_IWUSR | S_IWGRP,
-	set_touchkey_firm_status_show, NULL);
-static DEVICE_ATTR(touchkey_firm_version_panel, S_IRUGO | S_IWUSR | S_IWGRP,
-		   set_touchkey_firm_version_read_show, NULL);
 #ifdef LED_LDO_WITH_REGULATOR
 static DEVICE_ATTR(touchkey_brightness, S_IRUGO | S_IWUSR | S_IWGRP, NULL,
 		   brightness_control);
@@ -1694,7 +1632,7 @@ static void enable_led_notification(void) {
 			bln_notification_timeout_sec =
 				CURRENT_TIME.tv_sec + bln_notification_timeout / 1000;
 			printk(KERN_DEBUG
-				"[TouchKey-BLN] %s: Starting notification timeout (%d - %ld)\n",
+				"[TouchKey-BLN] %s: Starting notification timeout (%08lx - %ld)\n",
 				__func__, CURRENT_TIME.tv_sec, bln_notification_timeout_sec);
 
 			/* restart the timer */
