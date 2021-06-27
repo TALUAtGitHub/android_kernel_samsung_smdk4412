@@ -2979,7 +2979,6 @@ static void bfq_set_next_ioprio_data(struct bfq_queue *bfqq, struct io_context *
 	 * elevate the priority of this queue.
 	 */
 	bfqq->org_ioprio = bfqq->entity.new_ioprio;
-	bfqq->org_ioprio_class = bfqq->entity.new_ioprio_class;
 }
 
 static void bfq_check_ioprio_change(struct io_context *ioc,
@@ -3476,30 +3475,6 @@ out:
 	return;
 }
 
-/*
- * We temporarily boost lower priority queues if they are holding fs exclusive
- * resources.  They are boosted to normal prio (CLASS_BE/4).
- */
-static void bfq_prio_boost(struct bfq_queue *bfqq)
-{
-	if (has_fs_excl()) {
-		/*
-		 * Boost idle prio on transactions that would lock out other
-		 * users of the filesystem
-		 */
-		if (bfq_class_idle(bfqq))
-			bfqq->entity.new_ioprio_class = IOPRIO_CLASS_BE;
-		if (bfqq->entity.new_ioprio > IOPRIO_NORM)
-			bfqq->entity.new_ioprio = IOPRIO_NORM;
-	} else {
-		/*
-		 * Unboost the queue (if needed)
-		 */
-		bfqq->entity.new_ioprio_class = bfqq->org_ioprio_class;
-		bfqq->entity.new_ioprio = bfqq->org_ioprio;
-	}
-}
-
 static inline int __bfq_may_queue(struct bfq_queue *bfqq)
 {
 	if (bfq_bfqq_wait_request(bfqq) && bfq_bfqq_must_alloc(bfqq)) {
@@ -3530,11 +3505,8 @@ static int bfq_may_queue(struct request_queue *q, int rw)
 	spin_lock(&bfqd->eqm_lock);
 	bfqq = cic_to_bfqq(cic, rw_is_sync(rw));
 	spin_unlock(&bfqd->eqm_lock);
-	if (bfqq != NULL) {
-		bfq_prio_boost(bfqq);
-
+	if (bfqq != NULL)
 		return __bfq_may_queue(bfqq);
-	}
 
 	return ELV_MQUEUE_MAY;
 }

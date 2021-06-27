@@ -197,7 +197,6 @@ struct bfq_group;
  * @budget_timeout: budget expiration (in jiffies).
  * @dispatched: number of requests on the dispatch list or inside driver.
  * @org_ioprio: saved ioprio during boosted periods.
- * @org_ioprio_class: saved ioprio_class during boosted periods.
  * @flags: status flags.
  * @bfqq_list: node for active/idle bfqq list inside our bfqd.
  * @burst_list_node: node for the device's burst list.
@@ -259,7 +258,6 @@ struct bfq_queue {
 	int dispatched;
 
 	unsigned short org_ioprio;
-	unsigned short org_ioprio_class;
 
 	unsigned int flags;
 
