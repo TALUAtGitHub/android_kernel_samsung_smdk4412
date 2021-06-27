@@ -1014,9 +1014,13 @@ static struct device_attribute mdnie_attributes[] = {
 };
 
 #ifdef CONFIG_PM
-#if defined(CONFIG_FB)
+#ifdef CONFIG_FB
+#ifndef CONFIG_CPU_EXYNOS4210
 static void mdnie_fb_suspend(struct mdnie_info *mdnie)
 {
+#if defined(CONFIG_FB_MDNIE_PWM)
+	struct lcd_platform_data *pd = mdnie->lcd_pd;
+#endif
 	if (mdnie->fb_suspended)
 		return;
 
@@ -1025,9 +1029,8 @@ static void mdnie_fb_suspend(struct mdnie_info *mdnie)
 	dev_info(mdnie->dev, "+%s\n", __func__);
 
 	printk("%s: scenario:%d accessibility:%d", __func__, mdnie->scenario, mdnie->accessibility);
-#if defined(CONFIG_FB_MDNIE_PWM)
-	struct lcd_platform_data *pd = mdnie->lcd_pd;
 
+#if defined(CONFIG_FB_MDNIE_PWM)
 	mdnie->bd_enable = FALSE;
 
 	if (mdnie->enable)
@@ -1035,15 +1038,18 @@ static void mdnie_fb_suspend(struct mdnie_info *mdnie)
 
 	if (pd && pd->power_on)
 		pd->power_on(NULL, 0);
-
 #endif
 	dev_info(mdnie->dev, "-%s\n", __func__);
 
 	return;
 }
+#endif
 
 static void mdnie_fb_resume(struct mdnie_info *mdnie)
 {
+#if defined(CONFIG_FB_MDNIE_PWM)
+	struct lcd_platform_data *pd = mdnie->lcd_pd;
+#endif
 	if (!mdnie->fb_suspended)
 		return;
 
@@ -1052,7 +1058,6 @@ static void mdnie_fb_resume(struct mdnie_info *mdnie)
 	dev_info(mdnie->dev, "+%s\n", __func__);
 
 #if defined(CONFIG_FB_MDNIE_PWM)
-	struct lcd_platform_data *pd = mdnie->lcd_pd;
 	if (mdnie->enable)
 		mdnie_pwm_control(mdnie, 0);
 
