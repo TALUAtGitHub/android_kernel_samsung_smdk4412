@@ -1590,10 +1590,6 @@ static __net_init int ipv4_mib_init_net(struct net *net)
 		struct ipstats_mib *af_inet_stats;
 		af_inet_stats = per_cpu_ptr(net->mib.ip_statistics[0], i);
 		u64_stats_init(&af_inet_stats->syncp);
-#if SNMP_ARRAY_SZ == 2
-		af_inet_stats = per_cpu_ptr(net->mib.ip_statistics[1], i);
-		u64_stats_init(&af_inet_stats->syncp);
-#endif
 	}
 
 	if (snmp_mib_init((void __percpu **)net->mib.net_statistics,

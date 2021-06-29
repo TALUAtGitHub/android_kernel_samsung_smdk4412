@@ -1025,10 +1025,6 @@ static int __net_init ipv6_init_mibs(struct net *net)
 		struct ipstats_mib *af_inet6_stats;
 		af_inet6_stats = per_cpu_ptr(net->mib.ipv6_statistics[0], i);
 		u64_stats_init(&af_inet6_stats->syncp);
-#if SNMP_ARRAY_SZ == 2
-		af_inet6_stats = per_cpu_ptr(net->mib.ipv6_statistics[1], i);
-		u64_stats_init(&af_inet6_stats->syncp);
-#endif
 	}
 
 

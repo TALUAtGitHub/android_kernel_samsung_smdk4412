@@ -296,10 +296,6 @@ static int snmp6_alloc_dev(struct inet6_dev *idev)
 		struct ipstats_mib *addrconf_stats;
 		addrconf_stats = per_cpu_ptr(idev->stats.ipv6[0], i);
 		u64_stats_init(&addrconf_stats->syncp);
-#if SNMP_ARRAY_SZ == 2
-		addrconf_stats = per_cpu_ptr(idev->stats.ipv6[1], i);
-		u64_stats_init(&addrconf_stats->syncp);
-#endif
 	}
 
 
