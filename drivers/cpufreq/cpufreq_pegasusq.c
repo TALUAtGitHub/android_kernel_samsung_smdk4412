@@ -874,8 +874,10 @@ static ssize_t store_hotplug_lock(struct kobject *a, struct attribute *b,
 
 	ret = cpufreq_pegasusq_cpu_lock(input);
 	if (ret) {
+#ifdef CONFIG_CPU_FREQ_GOV_PEGASUSQ_DEBUG
 		printk(KERN_ERR "[HOTPLUG] already locked with smaller value %d < %d\n",
 			atomic_read(&g_hotplug_lock), input);
+#endif
 		return ret;
 	}
 
@@ -1067,7 +1069,9 @@ static void cpu_up_work(struct work_struct *work)
 #endif
 
 	if (online == 1) {
+#ifdef CONFIG_CPU_FREQ_GOV_PEGASUSQ_DEBUG
 		printk(KERN_ERR "CPU_UP 3\n");
+#endif
 		cpu_up(num_possible_cpus() - 1);
 		nr_up -= 1;
 	}
@@ -1077,7 +1081,9 @@ static void cpu_up_work(struct work_struct *work)
 			break;
 		if (cpu == 0)
 			continue;
+#ifdef CONFIG_CPU_FREQ_GOV_PEGASUSQ_DEBUG
 		printk(KERN_ERR "CPU_UP %d\n", cpu);
+#endif
 		cpu_up(cpu);
 	}
 }
@@ -1100,7 +1106,9 @@ static void cpu_down_work(struct work_struct *work)
 	for_each_online_cpu(cpu) {
 		if (cpu == 0)
 			continue;
+#ifdef CONFIG_CPU_FREQ_GOV_PEGASUSQ_DEBUG
 		printk(KERN_ERR "CPU_DOWN %d\n", cpu);
+#endif
 		cpu_down(cpu);
 		if (--nr_down == 0)
 			break;
@@ -1187,8 +1195,10 @@ static int check_up(void)
 	}
 
 	if (min_freq >= up_freq && min_rq_avg > up_rq) {
+#ifdef CONFIG_CPU_FREQ_GOV_PEGASUSQ_DEBUG
 		printk(KERN_ERR "[HOTPLUG IN] %s %d>=%d && %d>%d\n",
 			__func__, min_freq, up_freq, min_rq_avg, up_rq);
+#endif
 		hotplug_history->num_hist = 0;
 		return 1;
 	}
@@ -1251,8 +1261,10 @@ static int check_down(void)
 	}
 
 	if (max_freq <= down_freq && max_rq_avg <= down_rq) {
+#ifdef CONFIG_CPU_FREQ_GOV_PEGASUSQ_DEBUG
 		printk(KERN_ERR "[HOTPLUG OUT] %s %d<=%d && %d<%d\n",
 			__func__, max_freq, down_freq, max_rq_avg, down_rq);
+#endif
 		hotplug_history->num_hist = 0;
 		return 1;
 	}
