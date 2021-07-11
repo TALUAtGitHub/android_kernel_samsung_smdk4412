@@ -178,6 +178,16 @@ static int usb_parse_endpoint(struct device *ddev, int cfgno, int inum,
 	if (ifp->desc.bNumEndpoints >= num_ep)
 		goto skip_to_next_endpoint_or_interface_descriptor;
 
+	/* Check for duplicate endpoint addresses */
+	for (i = 0; i < ifp->desc.bNumEndpoints; ++i) {
+		if (ifp->endpoint[i].desc.bEndpointAddress ==
+		    d->bEndpointAddress) {
+			dev_warn(ddev, "config %d interface %d altsetting %d has a duplicate endpoint with address 0x%X, skipping\n",
+			    cfgno, inum, asnum, d->bEndpointAddress);
+			goto skip_to_next_endpoint_or_interface_descriptor;
+		}
+	}
+
 	endpoint = &ifp->endpoint[ifp->desc.bNumEndpoints];
 	++ifp->desc.bNumEndpoints;
 
@@ -423,6 +433,9 @@ static int usb_parse_configuration(struct usb_device *dev, int cfgidx,
 	unsigned iad_num = 0;
 
 	memcpy(&config->desc, buffer, USB_DT_CONFIG_SIZE);
+	nintf = nintf_orig = config->desc.bNumInterfaces;
+	config->desc.bNumInterfaces = 0;	// Adjusted later
+
 	if (config->desc.bDescriptorType != USB_DT_CONFIG ||
 	    config->desc.bLength < USB_DT_CONFIG_SIZE ||
 	    config->desc.bLength > size) {
@@ -436,7 +449,6 @@ static int usb_parse_configuration(struct usb_device *dev, int cfgidx,
 	buffer += config->desc.bLength;
 	size -= config->desc.bLength;
 
-	nintf = nintf_orig = config->desc.bNumInterfaces;
 	if (nintf > USB_MAXINTERFACES) {
 		dev_warn(ddev, "config %d has too many interfaces: %d, "
 		    "using maximum allowed: %d\n",

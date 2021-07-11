@@ -3515,6 +3515,12 @@ static void hub_events(void)
 				(u16) hub->change_bits[0],
 				(u16) hub->event_bits[0]);
 
+		/* make sure hdev is not freed before accessing it */
+		if (hub->disconnected)
+			goto hub_disconnected;
+		else
+			usb_get_dev(hdev);
+
 		/* Lock the device, then check to see if we were
 		 * disconnected while waiting for the lock to succeed. */
 		usb_lock_device(hdev);
@@ -3731,6 +3737,8 @@ static void hub_events(void)
 		usb_autopm_put_interface(intf);
  loop_disconnected:
 		usb_unlock_device(hdev);
+		usb_put_dev(hdev);
+ hub_disconnected:
 		kref_put(&hub->kref, hub_release);
 
         } /* end while (1) */

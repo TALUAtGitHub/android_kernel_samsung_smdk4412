@@ -5664,6 +5664,10 @@ wl_cfg80211_mgmt_tx(struct wiphy *wiphy, bcm_struct_cfgdev *cfgdev,
 
 	WL_DBG(("Enter \n"));
 
+	if (len > (ACTION_FRAME_SIZE + DOT11_MGMT_HDR_LEN)) {
+		WL_ERR(("bad length:%zu\n", len));
+		return BCME_BADARG;
+	}
 	dev = cfgdev_to_wlc_ndev(cfgdev, cfg);
 
 	/* set bsscfg idx for iovar (wlan0: P2PAPI_BSSCFG_PRIMARY, p2p: P2PAPI_BSSCFG_DEVICE)	*/
@@ -8159,6 +8163,32 @@ static s32 wl_get_assoc_ies(struct bcm_cfg80211 *cfg, struct net_device *ndev)
 	assoc_info.req_len = htod32(assoc_info.req_len);
 	assoc_info.resp_len = htod32(assoc_info.resp_len);
 	assoc_info.flags = htod32(assoc_info.flags);
+
+	if (assoc_info.req_len >
+		(MAX_REQ_LINE + sizeof(struct dot11_assoc_req) +
+		((assoc_info.flags & WLC_ASSOC_REQ_IS_REASSOC) ?
+		ETHER_ADDR_LEN : 0))) {
+		err = BCME_BADLEN;
+		goto exit;
+	}
+	if ((assoc_info.req_len > 0) &&
+	    (assoc_info.req_len < (sizeof(struct dot11_assoc_req) +
+		((assoc_info.flags & WLC_ASSOC_REQ_IS_REASSOC) ?
+		ETHER_ADDR_LEN : 0)))) {
+		err = BCME_BADLEN;
+		goto exit;
+	}
+	if (assoc_info.resp_len >
+		(MAX_REQ_LINE + sizeof(struct dot11_assoc_resp))) {
+		err = BCME_BADLEN;
+		goto exit;
+	}
+	if ((assoc_info.resp_len > 0) &&
+		(assoc_info.resp_len < sizeof(struct dot11_assoc_resp))) {
+		err = BCME_BADLEN;
+		goto exit;
+	}
+
 	if (conn_info->req_ie_len) {
 		conn_info->req_ie_len = 0;
 		bzero(conn_info->req_ie, sizeof(conn_info->req_ie));
@@ -8167,48 +8197,42 @@ static s32 wl_get_assoc_ies(struct bcm_cfg80211 *cfg, struct net_device *ndev)
 		conn_info->resp_ie_len = 0;
 		bzero(conn_info->resp_ie, sizeof(conn_info->resp_ie));
 	}
+
 	if (assoc_info.req_len) {
-		err = wldev_iovar_getbuf(ndev, "assoc_req_ies", NULL, 0, cfg->extra_buf,
-			WL_ASSOC_INFO_MAX, NULL);
+		err = wldev_iovar_getbuf(ndev, "assoc_req_ies", NULL, 0,
+				cfg->extra_buf, WL_ASSOC_INFO_MAX, NULL);
 		if (unlikely(err)) {
 			WL_ERR(("could not get assoc req (%d)\n", err));
-			return err;
+			goto exit;
 		}
-		conn_info->req_ie_len = assoc_info.req_len - sizeof(struct dot11_assoc_req);
+		conn_info->req_ie_len = assoc_info.req_len -
+			sizeof(struct dot11_assoc_req);
 		if (assoc_info.flags & WLC_ASSOC_REQ_IS_REASSOC) {
 			conn_info->req_ie_len -= ETHER_ADDR_LEN;
 		}
-		if (conn_info->req_ie_len <= MAX_REQ_LINE)
-			memcpy(conn_info->req_ie, cfg->extra_buf, conn_info->req_ie_len);
-		else {
-			WL_ERR(("IE size %d above max %d size \n",
-				conn_info->req_ie_len, MAX_REQ_LINE));
-			return err;
-		}
-	} else {
-		conn_info->req_ie_len = 0;
+		memcpy(conn_info->req_ie, cfg->extra_buf,
+			conn_info->req_ie_len);
 	}
+
 	if (assoc_info.resp_len) {
-		err = wldev_iovar_getbuf(ndev, "assoc_resp_ies", NULL, 0, cfg->extra_buf,
-			WL_ASSOC_INFO_MAX, NULL);
+		err = wldev_iovar_getbuf(ndev, "assoc_resp_ies", NULL, 0,
+				cfg->extra_buf, WL_ASSOC_INFO_MAX, NULL);
 		if (unlikely(err)) {
 			WL_ERR(("could not get assoc resp (%d)\n", err));
-			return err;
+			goto exit;
 		}
-		conn_info->resp_ie_len = assoc_info.resp_len -sizeof(struct dot11_assoc_resp);
-		if (conn_info->resp_ie_len <= MAX_REQ_LINE)
-			memcpy(conn_info->resp_ie, cfg->extra_buf, conn_info->resp_ie_len);
-		else {
-			WL_ERR(("IE size %d above max %d size \n",
-				conn_info->resp_ie_len, MAX_REQ_LINE));
-			return err;
-		}
-	} else {
-		conn_info->resp_ie_len = 0;
+		conn_info->resp_ie_len =
+			assoc_info.resp_len - sizeof(struct dot11_assoc_resp);
+		memcpy(conn_info->resp_ie, cfg->extra_buf,
+				conn_info->resp_ie_len);
 	}
-	WL_DBG(("req len (%d) resp len (%d)\n", conn_info->req_ie_len,
-		conn_info->resp_ie_len));
 
+exit:
+	if (err) {
+		WL_ERR(("err:%d assoc-req:%u,resp:%u conn-req:%u,resp:%u\n",
+			err, assoc_info.req_len, assoc_info.resp_len,
+			conn_info->req_ie_len, conn_info->resp_ie_len));
+	}
 	return err;
 }
 
@@ -9599,6 +9623,13 @@ static s32 wl_escan_handler(struct bcm_cfg80211 *cfg, bcm_struct_cfgdev *cfgdev,
 		WL_INFO(("WLC_E_STATUS_PARTIAL \n"));
 		if (!escan_result) {
 			WL_ERR(("Invalid escan result (NULL pointer)\n"));
+			goto exit;
+		}
+		if ((dtoh32(escan_result->buflen) > ESCAN_BUF_SIZE) ||
+		    (dtoh32(escan_result->buflen) <
+			sizeof(wl_escan_result_t))) {
+			WL_ERR(("Invalid escan buffer len:%d\n",
+				dtoh32(escan_result->buflen)));
 			goto exit;
 		}
 		if (dtoh16(escan_result->bss_count) != 1) {
